@@ -12,6 +12,9 @@ app:
       access-key: test
       secret-key: test
       bucket: inxbtwt-files
+  bucket-urls:
+    photo-profile: img/profile/photo/
+    cover-profile: img/profile/cover/photo/
 
 spring:
   datasource:
