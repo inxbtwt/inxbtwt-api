@@ -1,0 +1,3 @@
+# Buckets locais do SeaweedFS: um nome por linha.
+# Ao remover um nome, o bucket e seus arquivos existentes são preservados.
+inxbtwt-files

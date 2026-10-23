@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: inxbtwt-api
+  profiles:
+    default: dev

@@ -1,0 +1,39 @@
+services:
+  seaweedfs:
+    image: 'chrislusf/seaweedfs:4.48'
+    entrypoint: ['/bin/sh', '/dev-tools/start-seaweedfs.sh']
+    command: ['mini', '-dir=/data', '-ip=seaweedfs', '-ip.bind=0.0.0.0', '-webdav=false', '-admin.ui=false', '-s3.port.iceberg=0', '-s3.port.lance=0']
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+    ports:
+      - '127.0.0.1:8333:8333'
+    volumes:
+      - seaweedfs-data:/data
+      - ./dev-tools:/dev-tools:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://localhost:9333/cluster/status && nc -z localhost 8333']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+  postgres:
+    image: 'postgres:18'
+    environment:
+      - 'POSTGRES_DB=rsdb'
+      - 'POSTGRES_PASSWORD=admin'
+      - 'POSTGRES_USER=admin'
+    ports:
+      - '127.0.0.1:5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admin -d rsdb']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  seaweedfs-data:
+  postgres-data:
