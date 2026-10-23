@@ -59,7 +59,7 @@ Defina os buckets no arquivo `dev-tools/buckets.txt`, um por linha. O Compose l�
 
 Os parâmetros `AWS_*` do container têm valores literais no Compose. Não é necessário fornecer credenciais AWS reais. Apenas a porta S3 é publicada, em loopback.
 
-O SDK AWS Java 2 disponibiliza `S3Client` e `S3Presigner` no perfil `dev`, prontos para injeção nos serviços. Ainda não há endpoints de upload/download. O cliente não exige que o S3 esteja online apenas para inicializar a API.
+O SDK AWS Java 2 disponibiliza `S3Client` e `S3Presigner` no perfil `dev`. O `BucketService`, implementado por `S3Service`, envia e busca arquivos. O cliente não exige que o S3 esteja online apenas para inicializar a API.
 
 Com os containers iniciados, execute a integração real de upload, download, URL pré-assinada e exclusão do objeto de teste:
 
@@ -89,3 +89,46 @@ Para parar os serviços preservando os dados:
 ```powershell
 docker compose down
 ```
+
+## Cadastro de usuario
+
+`POST /users` recebe apenas o objeto JSON no body, com `Content-Type: application/json`:
+
+```json
+{"name":"Lucas","email":"lucas@example.com","phone":"11999999999","password":"password123"}
+```
+
+```powershell
+curl.exe -X POST http://localhost:8080/users -H "Content-Type: application/json" --data-binary "@user.json"
+```
+
+Retorna `201` com `ApiResponse<UserResponse>`. O cadastro nao acessa o bucket. As URLs de perfil e capa ficam nulas ate os uploads.
+
+Envie arquivos separadamente, depois de obter o UUID:
+
+```powershell
+curl.exe -X POST "http://localhost:8080/users/UUID_DO_USUARIO/photo" -F "photo=@avatar.png"
+curl.exe -X POST "http://localhost:8080/users/UUID_DO_USUARIO/photo?type=COVER" -F "photo=@capa.png"
+```
+
+Os uploads aceitam PNG, JPEG e WEBP e retornam `200` com a URL, chave e metadados em ApiResponse. As fotos usam o caminho configurado e UUID v7.
+
+## URLs de perfil e capa
+
+`GET /users/{userId}/photos` retorna as duas URLs atuais:
+
+```json
+{"message":"URLs das fotos do usuario consultadas com sucesso.","status":"OK","data":{"userId":"UUID","profileUrl":"http://localhost:8333/inxbtwt-files/img/profile/photo/UUID_V7","coverUrl":null}}
+```
+
+Perfil e capa sao opcionais e ficam em `photo_url` e `cover_url`. Envie a parte `photo` para `POST /users/{userId}/photo?type=COVER` para defini-la. O tipo padrao e `PROFILE`; trocar um tipo preserva o outro. Sao retornadas as URLs atuais, sem historico de uploads.
+
+`GET /users/{userId}/photo?url=URL_CODIFICADA` busca a imagem pela URL de perfil ou capa associada ao usuario. Retorna os bytes com o Content-Type da imagem, sem envelope ApiResponse. URLs de outros usuarios retornam 404; objetos removidos do bucket retornam 404. A busca usa o SDK S3 e aceita apenas URLs do endpoint e bucket configurados.
+
+```powershell
+curl.exe -X POST "http://localhost:8080/users/UUID_DO_USUARIO/photo?type=COVER" -F "photo=@capa.png"
+curl.exe "http://localhost:8080/users/UUID_DO_USUARIO/photos"
+curl.exe --get "http://localhost:8080/users/UUID_DO_USUARIO/photo" --data-urlencode "url=http://localhost:8333/inxbtwt-files/img/profile/photo/UUID_V7" --output foto.png
+```
+
+Reinicie a API para carregar o cadastro JSON. Em bancos existentes, aplique `dev-tools/sql/001-user-photo-optional.sql` uma vez para remover o NOT NULL de `photo_url` (ja aplicado no banco local desta workspace). Bancos novos seguem o mapeamento JPA, com as fotos opcionais.

@@ -2,14 +2,14 @@ package com.inxbtwt.infra.exception.http;
 
 import com.inxbtwt.infra.controller.user.UserController;
 import com.inxbtwt.domain.dto.api.ApiResponse;
-import io.opentelemetry.api.trace.StatusCode;
+import com.inxbtwt.infra.exception.bucket.BucketStorageException;
+import com.inxbtwt.infra.exception.bucket.BucketFileNotFoundException;
+import com.inxbtwt.infra.controller.util.ApiControllerUtils;
 import lombok.extern.slf4j.Slf4j;
 import com.inxbtwt.infra.exception.domain.DomainException;
 import com.inxbtwt.infra.exception.domain.user.UserAlreadyExistException;
 import com.inxbtwt.infra.exception.domain.user.UserNotFoundException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatusCode;
-import org.springframework.http.MediaType;
 import org.springframework.web.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -25,19 +25,20 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserExceptionHandler {
 
-    @ExceptionHandler(HttpException.class)
-    public ResponseEntity<ApiResponse<Void>> handleHttp(HttpException exception) {
-        return error(exception.getStatus(), exception.getMessage());
+    @ExceptionHandler(BucketFileNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBucketFileNotFound(BucketFileNotFoundException exception) {
+        return ApiControllerUtils.notFound(exception.getMessage());
     }
 
-    private ResponseEntity<ApiResponse<Void>> error(HttpStatusCode status, String message) {
-        String publicMessage = status.is5xxServerError() || message == null || message.isBlank()
-                ? HttpMessages.forStatus(status) : message;
-        var response = ApiResponse.<Void>builder()
-                .message(publicMessage)
-                .status(StatusCode.ERROR)
-                .build();
-        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(response);
+    @ExceptionHandler(BucketStorageException.class)
+    public ResponseEntity<ApiResponse<Void>> handleBucketStorage(BucketStorageException exception) {
+        log.error("Falha no armazenamento da foto do usuário", exception);
+        return ApiControllerUtils.serviceUnavailable();
+    }
+
+    @ExceptionHandler(HttpException.class)
+    public ResponseEntity<ApiResponse<Void>> handleHttp(HttpException exception) {
+        return ApiControllerUtils.error(exception.getStatus(), exception.getMessage());
     }
 
     @ExceptionHandler(UserAlreadyExistException.class)
@@ -73,10 +74,7 @@ public class UserExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception exception) {
         if (exception instanceof ErrorResponse frameworkError) {
-            var response = error(frameworkError.getStatusCode(), null);
-            return ResponseEntity.status(response.getStatusCode())
-                    .headers(frameworkError.getHeaders()).contentType(MediaType.APPLICATION_JSON)
-                    .body(response.getBody());
+            return ApiControllerUtils.error(frameworkError.getStatusCode(), null, frameworkError.getHeaders());
         }
         log.error("Erro inesperado no UserController", exception);
         return handleHttp(new InternalServerErrorHttpException());

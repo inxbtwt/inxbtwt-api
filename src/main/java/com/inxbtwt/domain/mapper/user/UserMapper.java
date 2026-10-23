@@ -12,7 +12,6 @@ public class UserMapper {
     public UserDataEntity updateEntity(UserDataEntity entity, UpdateUserRequest request) {
         return entity.toBuilder()
                 .name(request.name())
-                .photoUrl(request.photoUrl())
                 .email(request.email())
                 .phone(request.phone())
                 .password(request.password())
@@ -23,7 +22,6 @@ public class UserMapper {
         return UserResponse.builder()
                 .userId(entity.getUserId())
                 .name(entity.getName())
-                .photoUrl(entity.getPhotoUrl())
                 .email(entity.getEmail())
                 .phone(entity.getPhone())
                 .createdAt(entity.getCreatedAt())
@@ -34,7 +32,6 @@ public class UserMapper {
     public UserDataEntity toEntity(CreateUserRequest request) {
         return UserDataEntity.builder()
                 .name(request.name())
-                .photoUrl(request.photoUrl())
                 .email(request.email())
                 .phone(request.phone())
                 .password(request.password())

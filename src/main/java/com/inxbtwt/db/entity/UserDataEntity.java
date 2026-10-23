@@ -25,8 +25,11 @@ public class UserDataEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "photo_url", nullable = false)
+    @Column(name = "photo_url")
     private String photoUrl;
+
+    @Column(name = "cover_url")
+    private String coverUrl;
 
     @Column(name = "email", nullable = false)
     private String email;

@@ -7,7 +7,6 @@ import java.io.Serializable;
 @Builder
 public record PatchUserRequest(
         String name,
-        String photoUrl,
         String email,
         String phone,
         String password
