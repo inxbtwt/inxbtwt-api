@@ -1,13 +1,11 @@
 package com.inxbtwt.infra.controller;
 
 import com.inxbtwt.domain.dto.api.ApiResponse;
-import com.inxbtwt.infra.exception.http.HttpMessages;
-import io.opentelemetry.api.trace.StatusCode;
+import com.inxbtwt.infra.controller.util.ApiControllerUtils;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -23,9 +21,6 @@ public class ApiErrorController implements ErrorController {
         if (status == null || !status.isError()) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
         }
-        return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(ApiResponse.<Void>builder()
-                .message(HttpMessages.forStatus(status))
-                .status(StatusCode.ERROR)
-                .build());
+        return ApiControllerUtils.error(status, null);
     }
 }
