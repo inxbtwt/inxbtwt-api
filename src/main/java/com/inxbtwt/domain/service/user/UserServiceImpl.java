@@ -7,6 +7,8 @@ import com.inxbtwt.domain.dto.user.http.UpdateUserRequest;
 import com.inxbtwt.domain.dto.user.http.PatchUserRequest;
 import com.inxbtwt.domain.dto.user.http.FieldAvailabilityResponse;
 import com.inxbtwt.db.entity.UserDataEntity;
+import com.inxbtwt.domain.service.user.find.FindUserUseCase;
+import com.inxbtwt.domain.service.user.userBlob.UserBlobService;
 import com.inxbtwt.infra.exception.domain.user.UserNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,9 +41,9 @@ public class UserServiceImpl implements UserService {
     private final UserDataRepository userRepository;
     private final UserMapper userMapper;
     private final Validator validator;
-    private final BucketService bucketService;
-    private final BucketUrlsProperties bucketUrls;
     private final PasswordEncoder passwordEncoder;
+    private final UserBlobService userBlobService;
+    private final FindUserUseCase findUserUseCase;
 
     @Override
     @Transactional(readOnly = true)
@@ -66,7 +68,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse getUser(UUID userId) {
-        return userMapper.toResponse(findUser(userId));
+        return userMapper.toResponse(findUserUseCase.findUser(userId));
     }
 
     @Override
@@ -78,14 +80,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse updateUser(UUID userId, UpdateUserRequest request) {
-        var user = findUser(userId);
+        var user = findUserUseCase.findUser(userId);
         return saveUpdate(user, request);
     }
 
     @Override
     @Transactional
     public UserResponse patchUser(UUID userId, PatchUserRequest request) {
-        var user = findUser(userId);
+        var user = findUserUseCase.findUser(userId);
         UserUtils.validatePatch(request);
 
         var builder = userMapper.toUpdateRequest(user).toBuilder();
@@ -94,10 +96,35 @@ public class UserServiceImpl implements UserService {
         return saveUpdate(user, builder.build());
     }
 
-    private UserDataEntity findUser(UUID userId) {
-        UserUtils.validateUserId(userId);
-        return userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException("Usuário não encontrado."));
+    @Override
+    @Transactional
+    public UserResponse createUser(CreateUserRequest createUserRequest) throws UserException {
+        log.info("m=createUser");
+        UserUtils.validateFields(createUserRequest, validator);
+        UserUtils.validateEmailAvailability(userRepository.existsByEmailIgnoreCase(createUserRequest.email()));
+        UserUtils.validateUsernameAvailability(userRepository.existsByUsernameIgnoreCase(createUserRequest.username()));
+        UserUtils.validatePhoneAvailability(userRepository.existsByNormalizedPhone(UserUtils.normalizePhone(createUserRequest.phone())));
+        var user = userMapper.toEntity(createUserRequest).toBuilder()
+                .password(passwordEncoder.encode(createUserRequest.password())).build();
+        userMapper.linkAddresses(user);
+        var savedUser = userRepository.saveAndFlush(user);
+        return userMapper.toResponse(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public UploadFileResponse uploadPhoto(UUID userId, MultipartFile photo, UserPhotoType type) {
+        return userBlobService.uploadPhoto(userId, photo, type);
+    }
+
+    @Override
+    public UserPhotoUrlsResponse getPhotoUrls(UUID userId) {
+        return userBlobService.getPhotoUrls(userId);
+    }
+
+    @Override
+    public DownloadFileResponse downloadPhoto(UUID userId, String url) {
+        return userBlobService.downloadPhoto(userId, url);
     }
 
     private UserResponse saveUpdate(UserDataEntity user, UpdateUserRequest request) {
@@ -111,62 +138,6 @@ public class UserServiceImpl implements UserService {
             updated = updated.toBuilder().password(passwordEncoder.encode(request.password())).build();
         }
         return userMapper.toResponse(userRepository.saveAndFlush(updated));
-    }
-
-    @Override
-    @Transactional
-    public UserResponse createUser(CreateUserRequest createUserRequest) throws UserException {
-        log.info("m=createUser");
-        UserUtils.validateFields(createUserRequest, validator);
-        UserUtils.validateEmailAvailability(userRepository.existsByEmailIgnoreCase(createUserRequest.email()));
-        UserUtils.validateUsernameAvailability(userRepository.existsByUsernameIgnoreCase(createUserRequest.username()));
-        UserUtils.validatePhoneAvailability(userRepository.existsByNormalizedPhone(
-                UserUtils.normalizePhone(createUserRequest.phone())));
-        var user = userMapper.toEntity(createUserRequest).toBuilder()
-                .password(passwordEncoder.encode(createUserRequest.password())).build();
-        userMapper.linkAddresses(user);
-        var savedUser = userRepository.saveAndFlush(user);
-        return userMapper.toResponse(savedUser);
-    }
-
-    @Override
-    @Transactional
-    public UploadFileResponse uploadPhoto(UUID userId, MultipartFile photo, UserPhotoType type) {
-        var user = findUser(userId);
-        UserUtils.validatePhoto(photo);
-        if (type == null) {
-            throw new UserInvalidException("O tipo da foto é obrigatório.");
-        }
-        String path = type == UserPhotoType.COVER ? bucketUrls.coverProfile() : bucketUrls.photoProfile();
-        var uploaded = bucketService.upload(new UploadFileRequest(photo, path));
-        var updated = user.toBuilder();
-        if (type == UserPhotoType.COVER) {
-            updated.coverUrl(uploaded.url());
-        } else {
-            updated.photoUrl(uploaded.url());
-        }
-        userRepository.saveAndFlush(updated.build());
-        return uploaded;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public UserPhotoUrlsResponse getPhotoUrls(UUID userId) {
-        var user = findUser(userId);
-        return new UserPhotoUrlsResponse(user.getUserId(), user.getPhotoUrl(), user.getCoverUrl());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public DownloadFileResponse downloadPhoto(UUID userId, String url) {
-        var user = findUser(userId);
-        if (url == null || url.isBlank()) {
-            throw new UserInvalidException("A URL da foto é obrigatória.");
-        }
-        if (!url.equals(user.getPhotoUrl()) && !url.equals(user.getCoverUrl())) {
-            throw new UserNotFoundException("Foto não encontrada para este usuário.");
-        }
-        return bucketService.download(url);
     }
 
 }
