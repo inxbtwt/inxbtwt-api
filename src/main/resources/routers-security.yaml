@@ -53,3 +53,11 @@ app:
       - path: /profiles/me
         method: PATCH
         access: AUTHENTICATED
+
+      - path: /profiles
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /profiles/username/*
+        method: GET
+        access: AUTHENTICATED

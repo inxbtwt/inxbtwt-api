@@ -3,6 +3,7 @@ package com.inxbtwt.infra.exception.http;
 import org.springframework.http.HttpStatusCode;
 
 public final class HttpMessages {
+    public static final String PROFILES_FOUND = "Perfis consultados com sucesso.";
     public static final String PROFILE_FOUND = "Perfil consultado com sucesso.";
     public static final String PROFILE_UPDATED = "Perfil atualizado com sucesso.";
     public static final String USER_AVAILABILITY_CHECKED = "Disponibilidade consultada com sucesso.";
