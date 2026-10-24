@@ -16,6 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import com.inxbtwt.domain.dto.post.http.UpdatePostRequest;
+import com.inxbtwt.domain.dto.post.http.PostDeletedResponse;
+import com.inxbtwt.db.repository.PostMediaRepository;
+import com.inxbtwt.infra.exception.http.ForbiddenHttpException;
+import java.util.List;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import com.inxbtwt.domain.enums.PostProfileTab;
 import com.inxbtwt.db.repository.PostRepostRepository;
@@ -29,20 +35,80 @@ public class PostServiceImpl implements PostService {
     private final UserAuthUtil userAuthUtil;
     private final PostMapper postMapper;
     private final PostRepostRepository repostRepository;
+    private final PostMediaService postMedia;
+    private final PostMediaRepository mediaRepository;
 
     @Override
     @Transactional
     public PostResponse createPost(CreatePostRequest request) {
-        var userId = userAuthUtil.getUserId();
-        if (request == null || request.content() == null || request.content().isBlank()) {
-            throw new DomainException("O conteúdo da publicação é obrigatório.");
-        }
+        return createPost(request == null ? null : request.content(), List.of(), null);
+    }
 
+    @Override
+    @Transactional
+    public PostResponse createPost(String content, List<MultipartFile> files, String tenor) {
+        var userId = userAuthUtil.getUserId();
+        var attachments = files == null ? List.<MultipartFile>of() : files;
+        String tenorId = TenorEmbedParser.parse(tenor);
+        if (tenorId != null && !attachments.isEmpty()) {
+            throw new DomainException("Use um GIF do Tenor ou arquivos locais, sem misturar os dois.");
+        }
+        if ((content == null || content.isBlank()) && attachments.isEmpty() && tenorId == null) {
+            throw new DomainException("Informe um texto, uma imagem ou um GIF para publicar.");
+        }
+        postMedia.validate(attachments);
         var post = PostEntity.builder()
                 .author(findUserUseCase.findUser(userId))
-                .content(request.content().strip())
+                .content(content == null ? "" : content.strip())
                 .build();
-        return postMapper.toResponse(postRepository.saveAndFlush(post));
+        postRepository.saveAndFlush(post);
+        if (!attachments.isEmpty()) {
+            postMedia.attach(post, attachments);
+        }
+        if (tenorId != null) {
+            postMedia.attachTenor(post, tenorId);
+        }
+        return postMapper.toResponse(post);
+    }
+
+    @Override
+    @Transactional
+    public PostResponse updatePost(UUID postId, UpdatePostRequest request) {
+        var post = findOwnedPost(postId);
+        if (request == null || request.content() == null) {
+            throw new DomainException("Informe o texto da publicação.");
+        }
+        String content = request.content().strip();
+        if (content.isBlank() && mediaRepository.findByPost_IdInOrderByPositionAsc(List.of(post.getId())).isEmpty()) {
+            throw new DomainException("Uma publicação sem mídia precisa ter texto.");
+        }
+        if (!content.equals(post.getContent())) {
+            post.updateContent(content);
+            postRepository.saveAndFlush(post);
+        }
+        return postMapper.toResponse(post);
+    }
+
+    @Override
+    @Transactional
+    public PostDeletedResponse deletePost(UUID postId) {
+        var post = findOwnedPost(postId);
+        post.remove();
+        postRepository.saveAndFlush(post);
+        postMedia.removeAttachments(post);
+        var parent = post.getParent();
+        return new PostDeletedResponse(postId,
+                parent == null || parent.getDeletedAt() != null ? null : postMapper.toResponse(parent));
+    }
+
+    private PostEntity findOwnedPost(UUID postId) {
+        var viewerId = userAuthUtil.getUserId();
+        var post = postRepository.findByPostId(postId)
+                .orElseThrow(() -> new PostNotFoundException("Publicação não encontrada."));
+        if (!post.getAuthor().getUserId().equals(viewerId)) {
+            throw new ForbiddenHttpException("Você só pode editar ou excluir suas próprias publicações.");
+        }
+        return post;
     }
 
     @Override
@@ -68,7 +134,7 @@ public class PostServiceImpl implements PostService {
         var pageable = PageRequest.of(page, size);
         var posts = switch (tab) {
             case PUBLICATIONS -> postRepository.findPublications(authorId, pageable);
-            case REPLIES -> postRepository.findByAuthor_UserIdAndParentIsNotNullOrderByCreatedAtDescIdDesc(authorId, pageable);
+            case REPLIES -> postRepository.findByAuthor_UserIdAndParentIsNotNullAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(authorId, pageable);
             case LIKES -> postRepository.findLikedPosts(authorId, pageable);
         };
         var content = postMapper.toResponses(posts.getContent());

@@ -101,3 +101,59 @@ app:
       - path: /posts/*/comments
         method: GET
         access: AUTHENTICATED
+
+      - path: /posts/*/media/*
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts/*
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /posts/*
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /notifications
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /notifications/unread-count
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /notifications/*/read
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /notifications/read-all
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /friendships
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /friendships/**
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /friendships/*/request
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /friendships/*/accept
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /friendships/*/decline
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /friendships/*/cancel
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /friendships/*
+        method: DELETE
+        access: AUTHENTICATED

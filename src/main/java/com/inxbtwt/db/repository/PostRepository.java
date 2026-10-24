@@ -18,28 +18,28 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
-    Slice<PostEntity> findByParentIsNullOrderByCreatedAtDescIdDesc(Pageable pageable);
+    Slice<PostEntity> findByParentIsNullAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
     @Query("select p from PostEntity p left join PostRepostEntity r on r.post = p and r.user.userId = :authorId "
-            + "where (p.author.userId = :authorId and p.parent is null) or r.id is not null "
+            + "where p.deletedAt is null and ((p.author.userId = :authorId and p.parent is null) or r.id is not null) "
             + "order by coalesce(r.createdAt, p.createdAt) desc, p.id desc")
     Slice<PostEntity> findPublications(@Param("authorId") UUID authorId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
-    Slice<PostEntity> findByAuthor_UserIdAndParentIsNotNullOrderByCreatedAtDescIdDesc(UUID authorId, Pageable pageable);
+    Slice<PostEntity> findByAuthor_UserIdAndParentIsNotNullAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(UUID authorId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
-    @Query("select p from PostEntity p join PostLikeEntity l on l.post = p where l.user.userId = :authorId order by l.createdAt desc, l.id desc")
+    @Query("select p from PostEntity p join PostLikeEntity l on l.post = p where p.deletedAt is null and l.user.userId = :authorId order by l.createdAt desc, l.id desc")
     Slice<PostEntity> findLikedPosts(@Param("authorId") UUID authorId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
-    Slice<PostEntity> findByParent_PostIdOrderByCreatedAtDescIdDesc(UUID postId, Pageable pageable);
+    Slice<PostEntity> findByParent_PostIdAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(UUID postId, Pageable pageable);
 
-    @Query("select p.parent.id as postId, count(p) as total from PostEntity p where p.parent.id in :postIds group by p.parent.id")
+    @Query("select p.parent.id as postId, count(p) as total from PostEntity p where p.deletedAt is null and p.parent.id in :postIds group by p.parent.id")
     List<PostInteractionCount> countComments(@Param("postIds") List<Long> postIds);
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
-    @Query("select p from PostEntity p where p.postId = :postId")
+    @Query("select p from PostEntity p where p.postId = :postId and p.deletedAt is null")
     Optional<PostEntity> findByPostId(@Param("postId") UUID postId);
 }

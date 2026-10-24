@@ -51,4 +51,7 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:db/username-index.sql
+      schema-locations:
+        - classpath:db/username-index.sql
+        - classpath:db/post-media-schema.sql
+        - classpath:db/notification-types-schema.sql

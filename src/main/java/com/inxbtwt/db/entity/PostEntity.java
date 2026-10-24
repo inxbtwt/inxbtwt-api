@@ -55,6 +55,21 @@ public class PostEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    public void updateContent(String content) {
+        this.content = content;
+        updatedAt = LocalDateTime.now();
+    }
+
+    /** Remove o conteúdo, preservando a referência necessária às respostas de outros autores. */
+    public void remove() {
+        content = "";
+        deletedAt = LocalDateTime.now();
+        updatedAt = deletedAt;
+    }
+
     @PrePersist
     public void prePersist() {
         postId = UUID.randomUUID();

@@ -2,6 +2,7 @@ package com.inxbtwt.domain.service.profile;
 
 import com.inxbtwt.db.entity.ProfileEntity;
 import com.inxbtwt.db.repository.ProfileRepository;
+import com.inxbtwt.db.repository.FriendshipRepository;
 import com.inxbtwt.db.repository.UserDataRepository;
 import com.inxbtwt.domain.dto.profile.http.PatchProfileRequest;
 import com.inxbtwt.domain.dto.profile.http.ProfileResponse;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final FriendshipRepository friendships;
     private final UserDataRepository userRepository;
     private final FindUserUseCase findUserUseCase;
     private final UserAuthUtil userAuthUtil;
@@ -37,7 +39,7 @@ public class ProfileServiceImpl implements ProfileService {
         var userId = userAuthUtil.getUserId();
         return profileRepository.findByUserId(userId)
                 .map(this::toResponse)
-                .orElseGet(() -> new ProfileResponse(null, userId, null, null));
+                .orElseGet(() -> new ProfileResponse(null, userId, null, null, friendships.countFriends(userId)));
     }
 
     @Override
@@ -61,7 +63,7 @@ public class ProfileServiceImpl implements ProfileService {
                 ? user.getCoverUrl() : profile.getCoverUrl();
 
         return new ProfileViewResponse(user.getUserId(), user.getName(), user.getUsername(),
-                bio, user.getPhotoUrl(), coverUrl, user.getCreatedAt());
+                bio, user.getPhotoUrl(), coverUrl, user.getCreatedAt(), friendships.countFriends(user.getUserId()));
     }
 
     @Override
@@ -91,6 +93,6 @@ public class ProfileServiceImpl implements ProfileService {
 
     private ProfileResponse toResponse(ProfileEntity profile) {
         return new ProfileResponse(profile.getId(), profile.getUser_id().getUserId(),
-                profile.getBio(), profile.getCoverUrl());
+                profile.getBio(), profile.getCoverUrl(), friendships.countFriends(profile.getUser_id().getUserId()));
     }
 }

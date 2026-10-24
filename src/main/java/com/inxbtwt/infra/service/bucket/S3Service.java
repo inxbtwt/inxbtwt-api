@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.net.URI;
 import com.inxbtwt.infra.exception.bucket.BucketFileNotFoundException;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
@@ -89,6 +90,16 @@ public class S3Service implements BucketService {
             throw new BucketFileNotFoundException(exception);
         } catch (SdkException exception) {
             throw new BucketStorageException("Não foi possível buscar o arquivo no bucket.", exception);
+        }
+    }
+
+    @Override
+    public void delete(String key) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(properties.bucket()).key(resolveKey(key)).build());
+        } catch (SdkException exception) {
+            throw new BucketStorageException("Não foi possível remover o arquivo do bucket.", exception);
         }
     }
 

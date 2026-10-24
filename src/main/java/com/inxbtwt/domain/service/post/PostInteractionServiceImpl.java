@@ -1,11 +1,15 @@
 package com.inxbtwt.domain.service.post;
 
 import com.inxbtwt.db.entity.PostEntity;
+import com.inxbtwt.db.entity.UserDataEntity;
+import com.inxbtwt.domain.dto.notification.NotificationCommand;
+import com.inxbtwt.domain.enums.NotificationType;
 import com.inxbtwt.db.repository.PostLikeRepository;
 import com.inxbtwt.db.repository.PostRepostRepository;
 import com.inxbtwt.db.repository.PostRepository;
 import com.inxbtwt.domain.dto.post.http.*;
 import com.inxbtwt.domain.mapper.post.PostMapper;
+import com.inxbtwt.domain.service.notification.NotificationService;
 import com.inxbtwt.domain.service.user.find.FindUserUseCase;
 import com.inxbtwt.domain.util.UserAuthUtil;
 import com.inxbtwt.infra.exception.domain.DomainException;
@@ -27,6 +31,7 @@ public class PostInteractionServiceImpl implements PostInteractionService {
     private final FindUserUseCase findUser;
     private final UserAuthUtil auth;
     private final PostMapper mapper;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -34,7 +39,9 @@ public class PostInteractionServiceImpl implements PostInteractionService {
         var user = findUser.findUser(auth.getUserId());
         var post = findPost(postId);
         if (liked) {
-            likes.add(post.getId(), user.getId());
+            if (likes.add(post.getId(), user.getId()) > 0) {
+                notifyInteraction(post, user, NotificationType.POST_LIKED);
+            }
         } else {
             likes.remove(post.getId(), user.getId());
         }
@@ -47,7 +54,9 @@ public class PostInteractionServiceImpl implements PostInteractionService {
         var user = findUser.findUser(auth.getUserId());
         var post = findPost(postId);
         if (reposted) {
-            reposts.add(post.getId(), user.getId());
+            if (reposts.add(post.getId(), user.getId()) > 0) {
+                notifyInteraction(post, user, NotificationType.POST_REPOSTED);
+            }
         } else {
             reposts.remove(post.getId(), user.getId());
         }
@@ -65,6 +74,7 @@ public class PostInteractionServiceImpl implements PostInteractionService {
         var comment = PostEntity.builder().author(user).parent(parent)
                 .content(request.content().strip()).build();
         posts.saveAndFlush(comment);
+        notifyInteraction(parent, user, NotificationType.POST_COMMENTED);
         return new CommentCreatedResponse(mapper.toResponse(comment), mapper.toResponse(parent));
     }
 
@@ -76,9 +86,35 @@ public class PostInteractionServiceImpl implements PostInteractionService {
             throw new DomainException("Informe página não negativa e tamanho entre 1 e 100.");
         }
         findPost(postId);
-        var comments = posts.findByParent_PostIdOrderByCreatedAtDescIdDesc(postId, PageRequest.of(page, size));
+        var comments = posts.findByParent_PostIdAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(postId, PageRequest.of(page, size));
         return new PostPageResponse(mapper.toResponses(comments.getContent()), comments.getNumber(),
                 comments.getSize(), comments.hasNext(), comments.hasPrevious());
+    }
+
+    /** A notificação do site participa da mesma transação da interação, evitando entregas de ações revertidas. */
+    private void notifyInteraction(PostEntity post, UserDataEntity actor, NotificationType type) {
+        var recipientId = post.getAuthor().getUserId();
+        if (recipientId.equals(actor.getUserId())) {
+            return;
+        }
+        String title;
+        String action;
+        switch (type) {
+            case POST_LIKED -> {
+                title = "Nova curtida";
+                action = "curtiu sua publicação.";
+            }
+            case POST_REPOSTED -> {
+                title = "Novo repost";
+                action = "repostou sua publicação.";
+            }
+            case POST_COMMENTED -> {
+                title = "Novo comentário";
+                action = "comentou na sua publicação.";
+            }
+            default -> throw new IllegalArgumentException("Tipo de interação não suportado: " + type);
+        }
+        notificationService.send(new NotificationCommand(recipientId, actor.getUserId(), post.getPostId(), type, title, "@" + actor.getUsername() + " " + action));
     }
 
     private PostEntity findPost(UUID postId) {

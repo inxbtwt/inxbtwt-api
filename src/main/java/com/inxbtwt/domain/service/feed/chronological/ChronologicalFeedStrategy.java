@@ -23,7 +23,7 @@ public class ChronologicalFeedStrategy implements FeedStrategy {
 
     @Override
     public Slice<PostEntity> getFeed(FeedContext context) {
-        return postRepository.findByParentIsNullOrderByCreatedAtDescIdDesc(
+        return postRepository.findByParentIsNullAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(
                 PageRequest.of(context.page(), context.size()));
     }
 }

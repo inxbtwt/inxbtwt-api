@@ -10,6 +10,7 @@ public record ProfileViewResponse(
         String bio,
         String photoUrl,
         String coverUrl,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        long friendCount
 ) {
 }
