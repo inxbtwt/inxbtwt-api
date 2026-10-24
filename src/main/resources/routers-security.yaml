@@ -61,3 +61,43 @@ app:
       - path: /profiles/username/*
         method: GET
         access: AUTHENTICATED
+
+      - path: /posts
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /posts/*
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /feed
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts/*/like
+        method: PUT
+        access: AUTHENTICATED
+
+      - path: /posts/*/like
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /posts/*/repost
+        method: PUT
+        access: AUTHENTICATED
+
+      - path: /posts/*/repost
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /posts/*/comments
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /posts/*/comments
+        method: GET
+        access: AUTHENTICATED

@@ -7,3 +7,7 @@ spring:
     import: classpath:routers-security.yaml
 server:
   port: 8081
+
+app:
+  feed:
+    default-strategy: chronological
