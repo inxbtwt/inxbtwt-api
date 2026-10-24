@@ -25,7 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return List.of("/auth", "/auth/refresh", "/auth/csrf").contains(request.getServletPath());
+        return List.of("/auth", "/auth/refresh", "/auth/csrf", "/auth/logout")
+                .contains(request.getServletPath());
     }
 
     @Override

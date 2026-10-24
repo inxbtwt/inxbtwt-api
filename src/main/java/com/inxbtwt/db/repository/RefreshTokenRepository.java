@@ -7,6 +7,11 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.UUID;
 public interface RefreshTokenRepository extends JpaRepository<RefreshTokenEntity, UUID> {
+
+    @Modifying
+    @Query("delete from RefreshTokenEntity t where t.id = :id and t.userId = :userId")
+    int revoke(@Param("id") UUID id, @Param("userId") UUID userId);
+
     @Modifying
     @Query("delete from RefreshTokenEntity t where t.id = :id and t.userId = :userId and t.expiresAt > :now")
     int consume(@Param("id") UUID id, @Param("userId") UUID userId, @Param("now") Instant now);

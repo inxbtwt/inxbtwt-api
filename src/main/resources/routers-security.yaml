@@ -1,6 +1,10 @@
 app:
   security:
     routes:
+      - path: /auth/logout
+        method: POST
+        access: PERMIT_ALL
+
       - path: /auth/csrf
         method: GET
         access: PERMIT_ALL

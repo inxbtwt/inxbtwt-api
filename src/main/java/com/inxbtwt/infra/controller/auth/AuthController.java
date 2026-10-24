@@ -9,10 +9,15 @@ import com.inxbtwt.domain.service.auth.AuthService;
 import com.inxbtwt.infra.config.security.AuthCookies;
 import com.inxbtwt.infra.controller.util.ApiControllerUtils;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfLogoutHandler;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final AuthCookies cookies;
+    private final CsrfTokenRepository csrfTokenRepository;
 
     @GetMapping("/csrf")
     public ResponseEntity<ApiResponse<CsrfResponse>> csrf(CsrfToken csrfToken) {
@@ -43,5 +49,20 @@ public class AuthController {
         var tokens = authService.refresh(new RefreshTokenRequest(refreshToken));
         cookies.write(response, tokens);
         return ApiControllerUtils.ok("Token renovado com sucesso.", new AuthResponse(tokens.expiresIn()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @CookieValue(name = AuthCookies.REFRESH_TOKEN, required = false) String refreshToken,
+            HttpServletRequest request,
+            HttpServletResponse response) {
+        authService.logout(refreshToken);
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        new CsrfLogoutHandler(csrfTokenRepository).logout(request, response, authentication);
+        new SecurityContextLogoutHandler().logout(request, response, authentication);
+        cookies.clear(response);
+
+        return ApiControllerUtils.ok("Logout realizado com sucesso.", null);
     }
 }

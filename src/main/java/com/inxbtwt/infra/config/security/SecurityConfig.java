@@ -19,6 +19,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
@@ -28,18 +29,18 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtUtils jwt, UserDataRepository users,
-                                          SecurityResponseWriter writer) throws Exception {
-        var csrfRepository = new CookieCsrfTokenRepository();
-        csrfRepository.setCookieName("__Host-XSRF-TOKEN");
-        csrfRepository.setCookieCustomizer(cookie -> cookie.secure(true).httpOnly(true).sameSite("Strict").path("/"));
-
+                                          SecurityResponseWriter writer,
+                                          CorsConfigurationSource corsConfigurationSource,
+                                          CookieCsrfTokenRepository csrfRepository) throws Exception {
         http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfRepository)
                         .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
                 .exceptionHandling(errors -> errors
                         .authenticationEntryPoint((request, response, exception) ->
                                 writer.write(response, HttpStatus.UNAUTHORIZED, "Autenticação obrigatória."))
@@ -61,6 +62,19 @@ public class SecurityConfig {
         });
 
         return http.build();
+    }
+
+    @Bean
+    public CookieCsrfTokenRepository csrfTokenRepository() {
+        var repository = new CookieCsrfTokenRepository();
+        repository.setCookieName("__Host-XSRF-TOKEN");
+        repository.setCookieCustomizer(cookie -> cookie
+                .secure(true)
+                .httpOnly(true)
+                .sameSite("Strict")
+                .path("/"));
+
+        return repository;
     }
 
     @Bean

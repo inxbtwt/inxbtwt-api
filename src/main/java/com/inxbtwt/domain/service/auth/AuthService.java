@@ -5,5 +5,6 @@ import java.util.UUID;
 public interface AuthService {
     JwtGenerateResponse authenticate(LoginRequest request);
     JwtGenerateResponse refresh(RefreshTokenRequest request);
+    void logout(String refreshToken);
     UserResponse me(UUID userId);
 }

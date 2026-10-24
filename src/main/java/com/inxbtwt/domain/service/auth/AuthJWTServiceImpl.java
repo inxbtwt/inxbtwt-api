@@ -68,6 +68,33 @@ public class AuthJWTServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return;
+        }
+
+        UUID tokenId;
+        UUID userId;
+
+        try {
+            var claims = jwt.decode(refreshToken);
+
+            if (!"refresh".equals(claims.get("token_type", String.class))) {
+                return;
+            }
+
+            tokenId = UUID.fromString(claims.getId());
+            userId = UUID.fromString(claims.getSubject());
+        } catch (JwtException | IllegalArgumentException exception) {
+            // Invalid or expired cookies must not prevent local logout.
+            return;
+        }
+
+        refreshTokens.revoke(tokenId, userId);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public UserResponse me(UUID userId) {
         return userMapper.toResponse(users.findByUserId(userId)
