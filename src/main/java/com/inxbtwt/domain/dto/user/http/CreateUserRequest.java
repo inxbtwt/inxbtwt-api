@@ -4,7 +4,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import org.hibernate.validator.constraints.URL;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 import java.io.Serializable;
 
@@ -25,6 +27,8 @@ public record CreateUserRequest(
 
     @NotBlank(message = "A senha é obrigatória.")
     @Size(min = 8, max = 255, message = "A senha deve ter entre 8 e 255 caracteres.")
-    String password
+    String password,
+
+    List<@NotNull @Valid AddressRequest> addresses
 ) implements Serializable {
 }

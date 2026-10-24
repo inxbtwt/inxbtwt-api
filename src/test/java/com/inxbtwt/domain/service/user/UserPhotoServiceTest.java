@@ -23,6 +23,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mapstruct.factory.Mappers;
 import org.springframework.mock.web.MockMultipartFile;
 
 class UserPhotoServiceTest {
@@ -71,10 +72,10 @@ class UserPhotoServiceTest {
     private final UserDataRepository repository = mock(UserDataRepository.class);
     private final BucketService bucket = mock(BucketService.class);
     private final ValidatorFactory validation = Validation.buildDefaultValidatorFactory();
-    private final UserServiceImpl service = new UserServiceImpl(repository, new UserMapper(),
+    private final UserServiceImpl service = new UserServiceImpl(repository, Mappers.getMapper(UserMapper.class),
             validation.getValidator(), bucket, new BucketUrlsProperties("img/profile/photo/", "img/profile/cover/photo/"));
     private final MockMultipartFile photo = new MockMultipartFile("photo", "avatar.png", "image/png", new byte[]{1});
-    private final CreateUserRequest request = new CreateUserRequest("Lucas", "lucas@example.com", "11999999999", "password123");
+    private final CreateUserRequest request = new CreateUserRequest("Lucas", "lucas@example.com", "11999999999", "password123", null);
     private final UploadFileResponse uploaded = new UploadFileResponse("bucket", "img/profile/photo/uuid",
             "http://localhost:8333/bucket/img/profile/photo/uuid", "avatar.png", "image/png", 1);
 

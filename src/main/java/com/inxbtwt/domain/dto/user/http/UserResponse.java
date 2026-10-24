@@ -6,6 +6,7 @@ import lombok.Builder;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 @Builder
 public record UserResponse(
@@ -14,6 +15,7 @@ public record UserResponse(
     String email,
     String phone,
     LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    LocalDateTime updatedAt,
+    List<AddressResponse> addresses
 ) implements Serializable {
 }
