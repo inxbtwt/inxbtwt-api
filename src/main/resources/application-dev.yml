@@ -6,6 +6,12 @@ management:
 
 app:
   security:
+    cors:
+      allowed-origins:
+        - https://localhost:4200
+        - https://127.0.0.1:4200
+        - http://localhost:4200
+        - http://127.0.0.1:4200
     jwt:
       secret: aW54YnR3dC1kZXYtb25seS1qd3Qtc2VjcmV0LTMya2V5IQ==
       issuer: inxbtwt-api
