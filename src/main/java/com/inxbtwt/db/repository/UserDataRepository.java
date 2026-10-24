@@ -10,6 +10,10 @@ import java.util.UUID;
 @Repository
 public interface UserDataRepository extends JpaRepository<UserDataEntity, Integer> {
     Optional<UserDataEntity> findByEmailIgnoreCase(String email);
+
+    @Query("select u from UserDataEntity u where lower(u.username) = lower(:username)")
+    Optional<UserDataEntity> findByUsernameIgnoreCase(String username);
+
     boolean existsByEmailIgnoreCase(String email);
     @Query(value = "select exists(select 1 from user_data_entity where regexp_replace(phone, '[^0-9]', '', 'g') = :phone)", nativeQuery = true)
     boolean existsByNormalizedPhone(String phone);

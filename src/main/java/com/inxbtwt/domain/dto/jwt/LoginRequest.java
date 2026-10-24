@@ -1,16 +1,14 @@
 package com.inxbtwt.domain.dto.jwt;
 
-import jakarta.validation.constraints.Email;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 
 public record LoginRequest(
+        @NotBlank(message = "Informe o e-mail ou username.")
+        @JsonAlias("email")
+        String identifier,
 
-        @NotBlank
-        @Email
-        String email,
-
-        @NotBlank
+        @NotBlank(message = "A senha é obrigatória.")
         String password
 ) {
-
 }
