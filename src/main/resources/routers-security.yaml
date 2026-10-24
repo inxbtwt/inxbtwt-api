@@ -45,3 +45,11 @@ app:
       - path: /users/*/photo
         method: POST
         access: AUTHENTICATED
+
+      - path: /profiles/me
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /profiles/me
+        method: PATCH
+        access: AUTHENTICATED

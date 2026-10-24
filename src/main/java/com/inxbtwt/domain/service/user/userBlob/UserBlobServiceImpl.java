@@ -1,6 +1,8 @@
 package com.inxbtwt.domain.service.user.userBlob;
 
 import com.inxbtwt.db.entity.UserDataEntity;
+import com.inxbtwt.db.entity.ProfileEntity;
+import com.inxbtwt.db.repository.ProfileRepository;
 import com.inxbtwt.db.repository.UserDataRepository;
 import com.inxbtwt.domain.dto.bucket.DownloadFileResponse;
 import com.inxbtwt.domain.dto.bucket.UploadFileRequest;
@@ -27,6 +29,7 @@ import java.util.UUID;
 public class UserBlobServiceImpl implements UserBlobService {
 
     private final UserDataRepository userRepository;
+    private final ProfileRepository profileRepository;
     private final BucketService bucketService;
     private final BucketUrlsProperties bucketUrls;
     private final FindUserUseCase findUserUseCase;
@@ -35,7 +38,10 @@ public class UserBlobServiceImpl implements UserBlobService {
     @Transactional(readOnly = true)
     public UserPhotoUrlsResponse getPhotoUrls(UUID userId) {
         var user = findUserUseCase.findUser(userId);
-        return new UserPhotoUrlsResponse(user.getUserId(), user.getPhotoUrl(), user.getCoverUrl());
+        String coverUrl = profileRepository.findByUserId(userId)
+                .map(ProfileEntity::getCoverUrl)
+                .orElse(user.getCoverUrl());
+        return new UserPhotoUrlsResponse(user.getUserId(), user.getPhotoUrl(), coverUrl);
     }
 
     @Override
@@ -45,13 +51,17 @@ public class UserBlobServiceImpl implements UserBlobService {
         if (url == null || url.isBlank()) {
             throw new UserInvalidException("A URL da foto é obrigatória.");
         }
-        if (!url.equals(user.getPhotoUrl()) && !url.equals(user.getCoverUrl())) {
+        String profileCoverUrl = profileRepository.findByUserId(userId)
+                .map(ProfileEntity::getCoverUrl)
+                .orElse(null);
+        if (!url.equals(user.getPhotoUrl()) && !url.equals(user.getCoverUrl()) && !url.equals(profileCoverUrl)) {
             throw new UserNotFoundException("Foto não encontrada para este usuário.");
         }
         return bucketService.download(url);
     }
 
     @Override
+    @Transactional
     public UploadFileResponse uploadPhoto(UUID userId, MultipartFile photo, UserPhotoType type) {
         var user = findUserUseCase.findUser(userId);
         UserUtils.validatePhoto(photo);
@@ -60,13 +70,14 @@ public class UserBlobServiceImpl implements UserBlobService {
         }
         String path = type == UserPhotoType.COVER ? bucketUrls.coverProfile() : bucketUrls.photoProfile();
         var uploaded = bucketService.upload(new UploadFileRequest(photo, path));
-        var updated = user.toBuilder();
         if (type == UserPhotoType.COVER) {
-            updated.coverUrl(uploaded.url());
+            var profile = profileRepository.findByUserId(userId)
+                    .orElseGet(() -> ProfileEntity.builder().user_id(user).build());
+            profile.setCoverUrl(uploaded.url());
+            profileRepository.saveAndFlush(profile);
         } else {
-            updated.photoUrl(uploaded.url());
+            userRepository.saveAndFlush(user.toBuilder().photoUrl(uploaded.url()).build());
         }
-        userRepository.saveAndFlush(updated.build());
         return uploaded;
     }
 }

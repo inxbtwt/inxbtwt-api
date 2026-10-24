@@ -17,6 +17,12 @@ public class ProfileEntity {
     @Column(name = "id", nullable = false)
     private Long id;
 
+    @Column(name = "bio", columnDefinition = "TEXT")
+    private String bio;
+
+    @Column(name = "cover_url")
+    private String coverUrl;
+
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private UserDataEntity user_id;
