@@ -16,6 +16,10 @@ public record CreateUserRequest(
     @Size(min = 3, max = 30, message = "O nome deve ter entre 3 e 30 caracteres.")
     String name,
 
+    @NotBlank(message = "O nome de usuário é obrigatório.")
+    @Size(min = 3, max = 30, message = "O nome de usuário deve ter entre 3 e 30 caracteres.")
+    String username,
+
     @NotBlank(message = "O e-mail é obrigatório.")
     @Email(message = "O e-mail deve ser válido.")
     @Size(max = 255, message = "O e-mail deve ter no máximo 255 caracteres.")

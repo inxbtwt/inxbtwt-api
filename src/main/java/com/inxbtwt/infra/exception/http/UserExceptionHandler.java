@@ -10,6 +10,7 @@ import com.inxbtwt.infra.exception.domain.DomainException;
 import com.inxbtwt.infra.exception.domain.user.UserAlreadyExistException;
 import com.inxbtwt.infra.exception.domain.user.UserNotFoundException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
@@ -25,6 +26,30 @@ import java.util.stream.Collectors;
 @RestControllerAdvice(assignableTypes = UserController.class)
 @Slf4j
 public class UserExceptionHandler {
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof org.hibernate.exception.ConstraintViolationException violation
+                    && "uk_user_data_username_lower".equals(violation.getConstraintName())) {
+                return handleHttp(new ConflictHttpException(
+                        "Já existe um usuário cadastrado com este nome de usuário."));
+            }
+            if (cause instanceof org.hibernate.exception.ConstraintViolationException violation) {
+                if ("uk_user_data_email_lower".equals(violation.getConstraintName())) {
+                    return handleHttp(new ConflictHttpException(
+                            "Já existe um usuário cadastrado com este e-mail."));
+                }
+                if ("uk_user_data_phone_digits".equals(violation.getConstraintName())) {
+                    return handleHttp(new ConflictHttpException(
+                            "Já existe um usuário cadastrado com este telefone."));
+                }
+            }
+            cause = cause.getCause();
+        }
+        return handleUnexpected(exception);
+    }
 
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException exception) {

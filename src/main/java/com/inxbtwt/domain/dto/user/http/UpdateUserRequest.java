@@ -7,11 +7,15 @@ import lombok.Builder;
 
 import java.io.Serializable;
 
-@Builder
+@Builder(toBuilder = true)
 public record UpdateUserRequest(
     @NotBlank(message = "O nome é obrigatório.")
     @Size(min = 3, max = 30, message = "O nome deve ter entre 3 e 30 caracteres.")
     String name,
+
+    @NotBlank(message = "O nome de usuário é obrigatório.")
+    @Size(min = 3, max = 30, message = "O nome de usuário deve ter entre 3 e 30 caracteres.")
+    String username,
 
     @NotBlank(message = "O e-mail é obrigatório.")
     @Email(message = "O e-mail deve ser válido.")

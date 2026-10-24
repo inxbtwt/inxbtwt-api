@@ -9,6 +9,7 @@ import com.inxbtwt.domain.dto.user.http.CreateUserRequest;
 import com.inxbtwt.domain.dto.user.http.UserResponse;
 import com.inxbtwt.domain.dto.user.http.UpdateUserRequest;
 import com.inxbtwt.domain.dto.user.http.PatchUserRequest;
+import com.inxbtwt.domain.dto.user.http.FieldAvailabilityResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,6 +40,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+
+    @GetMapping("/availability")
+    public ResponseEntity<ApiResponse<FieldAvailabilityResponse>> getAvailability(
+            @RequestParam String field, @RequestParam String value) {
+        return ApiControllerUtils.ok(HttpMessages.USER_AVAILABILITY_CHECKED,
+                userService.getAvailability(field, value));
+    }
 
     @PostMapping(value = "/{userId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<UploadFileResponse>> uploadPhoto(

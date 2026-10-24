@@ -25,6 +25,10 @@ app:
         method: POST
         access: PERMIT_ALL
 
+      - path: /users/availability
+        method: GET
+        access: PERMIT_ALL
+
       - path: /users/**
         method: GET
         access: ROLES
@@ -32,4 +36,12 @@ app:
 
       - path: /users/**
         method: PUT
+        access: AUTHENTICATED
+
+      - path: /users/*
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /users/*/photo
+        method: POST
         access: AUTHENTICATED

@@ -12,6 +12,7 @@ import java.util.List;
 public record UserResponse(
     UUID userId,
     String name,
+    String username,
     String email,
     String phone,
     LocalDateTime createdAt,

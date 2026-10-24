@@ -2,17 +2,8 @@ package com.inxbtwt.domain.mapper.user;
 
 import com.inxbtwt.db.entity.UserDataEntity;
 import com.inxbtwt.db.entity.AddressEntity;
-import com.inxbtwt.domain.dto.user.http.AddressRequest;
-import com.inxbtwt.domain.dto.user.http.AddressResponse;
-import org.mapstruct.AfterMapping;
-import com.inxbtwt.domain.dto.user.http.CreateUserRequest;
-import com.inxbtwt.domain.dto.user.http.UserResponse;
-import com.inxbtwt.domain.dto.user.http.UpdateUserRequest;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.ReportingPolicy;
+import com.inxbtwt.domain.dto.user.http.*;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.ERROR)
 public interface UserMapper {
@@ -25,6 +16,7 @@ public interface UserMapper {
 
     @BeanMapping(ignoreByDefault = true)
     @Mapping(target = "name", source = "name")
+    @Mapping(target = "username", source = "username")
     @Mapping(target = "email", source = "email")
     @Mapping(target = "phone", source = "phone")
     @Mapping(target = "password", source = "password")
@@ -32,6 +24,8 @@ public interface UserMapper {
                        @MappingTarget UserDataEntity.UserDataEntityBuilder builder);
 
     UserResponse toResponse(UserDataEntity entity);
+
+    UpdateUserRequest toUpdateRequest(UserDataEntity user);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "userId", ignore = true)
@@ -57,4 +51,7 @@ public interface UserMapper {
     default void linkAddresses(@MappingTarget UserDataEntity user) {
         user.getAddresses().forEach(address -> address.setUser(user));
     }
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+   void mergePatch(PatchUserRequest request, @MappingTarget UpdateUserRequest.UpdateUserRequestBuilder builder);
 }
