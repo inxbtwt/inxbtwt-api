@@ -1,0 +1,31 @@
+app:
+  security:
+    routes:
+      - path: /auth/csrf
+        method: GET
+        access: PERMIT_ALL
+
+      - path: /auth
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /auth/refresh
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /me
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /users
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /users/**
+        method: GET
+        access: ROLES
+        roles: [ADMIN, USER]
+
+      - path: /users/**
+        method: PUT
+        access: AUTHENTICATED

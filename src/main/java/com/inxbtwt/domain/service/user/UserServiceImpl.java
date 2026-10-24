@@ -18,6 +18,7 @@ import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import com.inxbtwt.domain.service.bucket.BucketService;
 import com.inxbtwt.domain.dto.bucket.UploadFileRequest;
 import com.inxbtwt.domain.dto.bucket.UploadFileResponse;
@@ -39,6 +40,7 @@ public class UserServiceImpl implements UserService {
     private final Validator validator;
     private final BucketService bucketService;
     private final BucketUrlsProperties bucketUrls;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,18 +84,25 @@ public class UserServiceImpl implements UserService {
         UserUtils.validateFields(request, validator);
         UserUtils.validateEmailAvailability(userRepository.existsByEmailIgnoreCaseAndUserIdNot(request.email(), user.getUserId()));
         var updated = userMapper.updateEntity(user, request);
+        if (!request.password().equals(user.getPassword())) {
+            updated = updated.toBuilder().password(passwordEncoder.encode(request.password())).build();
+        }
         return userMapper.toResponse(userRepository.saveAndFlush(updated));
     }
+
     @Override
     @Transactional
     public UserResponse createUser(CreateUserRequest createUserRequest) throws UserException {
         log.info("m=createUser");
         UserUtils.validateFields(createUserRequest, validator);
         UserUtils.validateEmailAvailability(userRepository.existsByEmailIgnoreCase(createUserRequest.email()));
-        var user = userMapper.toEntity(createUserRequest);
+        var user = userMapper.toEntity(createUserRequest).toBuilder()
+                .password(passwordEncoder.encode(createUserRequest.password())).build();
+        userMapper.linkAddresses(user);
         var savedUser = userRepository.saveAndFlush(user);
         return userMapper.toResponse(savedUser);
     }
+
     @Override
     @Transactional
     public UploadFileResponse uploadPhoto(UUID userId, MultipartFile photo, UserPhotoType type) {

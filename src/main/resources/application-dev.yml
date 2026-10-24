@@ -5,6 +5,12 @@ management:
         enabled: false
 
 app:
+  security:
+    jwt:
+      secret: aW54YnR3dC1kZXYtb25seS1qd3Qtc2VjcmV0LTMya2V5IQ==
+      issuer: inxbtwt-api
+      access-token-expiration: 15m
+      refresh-token-expiration: 7d
   storage:
     s3:
       endpoint: http://localhost:8333

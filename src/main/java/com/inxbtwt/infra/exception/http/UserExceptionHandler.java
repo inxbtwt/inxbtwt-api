@@ -10,6 +10,7 @@ import com.inxbtwt.infra.exception.domain.DomainException;
 import com.inxbtwt.infra.exception.domain.user.UserAlreadyExistException;
 import com.inxbtwt.infra.exception.domain.user.UserNotFoundException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -24,6 +25,11 @@ import java.util.stream.Collectors;
 @RestControllerAdvice(assignableTypes = UserController.class)
 @Slf4j
 public class UserExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException exception) {
+        return ApiControllerUtils.unauthorized(exception.getMessage());
+    }
 
     @ExceptionHandler(BucketFileNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleBucketFileNotFound(BucketFileNotFoundException exception) {
