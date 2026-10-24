@@ -41,6 +41,7 @@ public class PostMapper {
         var commentCounts = counts(posts.countComments(ids));
         var liked = new HashSet<>(likes.findViewerPostIds(viewerId, ids));
         var reposted = new HashSet<>(reposts.findViewerPostIds(viewerId, ids));
+
         return publications.stream().map(post -> {
             var parent = post.getParent();
             var reference = parent == null ? null : new PostReferenceResponse(parent.getPostId(),

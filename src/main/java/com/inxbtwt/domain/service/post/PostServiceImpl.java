@@ -56,6 +56,7 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new PostNotFoundException("Publicação não encontrada."));
         return postMapper.toResponse(post);
     }
+
     @Override
     @Transactional(readOnly = true)
     public PostPageResponse getPostsByAuthor(UUID authorId, PostProfileTab tab, int page, int size) {
