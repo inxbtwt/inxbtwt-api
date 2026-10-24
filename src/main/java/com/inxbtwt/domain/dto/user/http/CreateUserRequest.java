@@ -4,7 +4,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import org.hibernate.validator.constraints.URL;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 import java.io.Serializable;
 
@@ -14,10 +16,9 @@ public record CreateUserRequest(
     @Size(min = 3, max = 30, message = "O nome deve ter entre 3 e 30 caracteres.")
     String name,
 
-    @NotBlank(message = "A URL da foto é obrigatória.")
-    @Size(max = 255, message = "A URL da foto deve ter no máximo 255 caracteres.")
-    @URL(message = "A URL da foto deve ser válida.")
-    String photoUrl,
+    @NotBlank(message = "O nome de usuário é obrigatório.")
+    @Size(min = 3, max = 30, message = "O nome de usuário deve ter entre 3 e 30 caracteres.")
+    String username,
 
     @NotBlank(message = "O e-mail é obrigatório.")
     @Email(message = "O e-mail deve ser válido.")
@@ -30,6 +31,8 @@ public record CreateUserRequest(
 
     @NotBlank(message = "A senha é obrigatória.")
     @Size(min = 8, max = 255, message = "A senha deve ter entre 8 e 255 caracteres.")
-    String password
+    String password,
+
+    List<@NotNull @Valid AddressRequest> addresses
 ) implements Serializable {
 }

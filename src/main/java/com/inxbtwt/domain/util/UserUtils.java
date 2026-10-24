@@ -7,9 +7,12 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 
 import java.util.UUID;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.stream.Collectors;
 
 public final class UserUtils {
+
+    private static final PatchUserRequest EMPTY_PATCH = PatchUserRequest.builder().build();
 
     private UserUtils() {
     }
@@ -36,8 +39,7 @@ public final class UserUtils {
     }
 
     public static void validatePatch(PatchUserRequest request) {
-        if (request == null || (request.name() == null && request.photoUrl() == null
-                && request.email() == null && request.phone() == null && request.password() == null)) {
+        if (request == null || EMPTY_PATCH.equals(request)) {
             throw new UserInvalidException("Informe pelo menos um campo para atualizar o usuário.");
         }
     }
@@ -45,6 +47,36 @@ public final class UserUtils {
     public static void validateEmailAvailability(boolean emailAlreadyExists) {
         if (emailAlreadyExists) {
             throw new UserAlreadyExistException("Já existe um usuário cadastrado com este e-mail.");
+        }
+    }
+
+    public static void validateUsernameAvailability(boolean usernameAlreadyExists) {
+        if (usernameAlreadyExists) {
+            throw new UserAlreadyExistException("Já existe um usuário cadastrado com este nome de usuário.");
+        }
+    }
+
+    public static String normalizePhone(String phone) {
+        String normalized = phone == null ? "" : phone.replaceAll("[^0-9]", "");
+        if (normalized.isBlank()) {
+            throw new UserInvalidException("Informe um telefone válido.");
+        }
+        return normalized;
+    }
+
+    public static void validatePhoneAvailability(boolean phoneAlreadyExists) {
+        if (phoneAlreadyExists) {
+            throw new UserAlreadyExistException("Já existe um usuário cadastrado com este telefone.");
+        }
+    }
+
+    public static void validatePhoto(MultipartFile photo) {
+        if (photo == null || photo.isEmpty()) {
+            throw new UserInvalidException("A foto do usuário é obrigatória.");
+        }
+        String contentType = photo.getContentType();
+        if (!java.util.Set.of("image/png", "image/jpeg", "image/webp").contains(contentType == null ? "" : contentType)) {
+            throw new UserInvalidException("A foto deve estar no formato PNG, JPEG ou WEBP.");
         }
     }
 }

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
@@ -25,8 +27,14 @@ public class UserDataEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "photo_url", nullable = false)
+    @Column(name = "username", nullable = false, unique = true)
+    private String username;
+
+    @Column(name = "photo_url")
     private String photoUrl;
+
+    @Column(name = "cover_url")
+    private String coverUrl;
 
     @Column(name = "email", nullable = false)
     private String email;
@@ -36,6 +44,10 @@ public class UserDataEntity {
 
     @Column(name = "password", nullable = false)
     private String password;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<AddressEntity> addresses = new ArrayList<>();
 
     private LocalDateTime createdAt;
 

@@ -4,20 +4,18 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
-import org.hibernate.validator.constraints.URL;
 
 import java.io.Serializable;
 
-@Builder
+@Builder(toBuilder = true)
 public record UpdateUserRequest(
     @NotBlank(message = "O nome é obrigatório.")
     @Size(min = 3, max = 30, message = "O nome deve ter entre 3 e 30 caracteres.")
     String name,
 
-    @NotBlank(message = "A URL da foto é obrigatória.")
-    @Size(max = 255, message = "A URL da foto deve ter no máximo 255 caracteres.")
-    @URL(message = "A URL da foto deve ser válida.")
-    String photoUrl,
+    @NotBlank(message = "O nome de usuário é obrigatório.")
+    @Size(min = 3, max = 30, message = "O nome de usuário deve ter entre 3 e 30 caracteres.")
+    String username,
 
     @NotBlank(message = "O e-mail é obrigatório.")
     @Email(message = "O e-mail deve ser válido.")

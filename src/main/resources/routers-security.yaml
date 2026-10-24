@@ -1,0 +1,55 @@
+app:
+  security:
+    routes:
+      - path: /auth/logout
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /auth/csrf
+        method: GET
+        access: PERMIT_ALL
+
+      - path: /auth
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /auth/refresh
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /me
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /users
+        method: POST
+        access: PERMIT_ALL
+
+      - path: /users/availability
+        method: GET
+        access: PERMIT_ALL
+
+      - path: /users/**
+        method: GET
+        access: ROLES
+        roles: [ADMIN, USER]
+
+      - path: /users/**
+        method: PUT
+        access: AUTHENTICATED
+
+      - path: /users/*
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /users/*/photo
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /profiles/me
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /profiles/me
+        method: PATCH
+        access: AUTHENTICATED

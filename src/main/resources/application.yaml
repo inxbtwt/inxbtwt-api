@@ -3,3 +3,7 @@ spring:
     name: inxbtwt-api
   profiles:
     default: dev
+  config:
+    import: classpath:routers-security.yaml
+server:
+  port: 8081
