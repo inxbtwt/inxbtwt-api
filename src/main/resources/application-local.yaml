@@ -1,0 +1,57 @@
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+app:
+  security:
+    cors:
+      allowed-origins:
+        - https://localhost:4200
+        - https://127.0.0.1:4200
+        - http://localhost:4200
+        - http://127.0.0.1:4200
+    jwt:
+      secret: aW54YnR3dC1kZXYtb25seS1qd3Qtc2VjcmV0LTMya2V5IQ==
+      issuer: inxbtwt-api
+      access-token-expiration: 15m
+      refresh-token-expiration: 7d
+  storage:
+    s3:
+      endpoint: http://localhost:8333
+      region: us-east-1
+      access-key: test
+      secret-key: test
+      bucket: inxbtwt-files
+  bucket-urls:
+    photo-profile: img/profile/photo/
+    cover-profile: img/profile/cover/photo/
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rsdb
+    username: admin
+    password: admin
+    driver-class-name: org.postgresql.Driver
+  docker:
+    compose:
+      enabled: false
+  jpa:
+    defer-datasource-initialization: true
+    open-in-view: false
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  sql:
+    init:
+      mode: always
+      schema-locations:
+        - classpath:db/username-index.sql
+        - classpath:db/post-media-schema.sql
+        - classpath:db/notification-types-schema.sql

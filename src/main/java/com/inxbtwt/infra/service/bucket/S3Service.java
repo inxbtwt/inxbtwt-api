@@ -26,7 +26,7 @@ import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @Service
-@Profile("dev")
+@Profile("dev|local")
 @RequiredArgsConstructor
 public class S3Service implements BucketService {
 
