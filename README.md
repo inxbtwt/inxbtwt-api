@@ -1,73 +1,52 @@
-# API JUST
+# inxbtwt-api
 
-## Desenvolvimento local
+## Objetivo
 
-O `compose.yaml` inicia somente PostgreSQL e SeaweedFS. Execute a API pela IDE ou pelo Maven, usando o profile Spring `local` ou `dev`.
+Ser a API principal da rede social inxbtwt, responsável pelas regras de negócio, pela autenticação dos usuários e pelos endpoints consumidos pelo front-end. A aplicação também integra os microsserviços especializados, mantendo um ponto de entrada para as funcionalidades utilizadas pelo cliente.
 
-```sh
-docker compose up -d --wait
+## O que a API faz atualmente
+
+| Área | Funcionalidades disponíveis |
+| --- | --- |
+| Autenticação | Login, logout, renovação de sessão e consulta do usuário autenticado. Os tokens JWT são enviados por cookies, com proteção CSRF nas operações de escrita. |
+| Usuários | Cadastro, consulta e atualização de dados, além da verificação de disponibilidade de username, e-mail e telefone. |
+| Perfis | Consulta do próprio perfil, visualização por username e atualização de bio e capa. |
+| Arquivos | Upload e consulta de fotos de perfil e capa, com armazenamento compatível com S3. |
+| Publicações | Criação, edição e exclusão de posts, anexos de imagem ou GIF e incorporação de conteúdo do Tenor. |
+| Interações | Comentários, curtidas e reposts. |
+| Feed | Listagem paginada de publicações com estratégia cronológica. |
+| Amizades | Envio, aceite, recusa e cancelamento de solicitações, consulta de relações, listagem de amigos e encerramento de amizades. |
+| Notificações | Consulta de notificações, contagem de não lidas e marcação de leitura. |
+| Busca | Validação da requisição e encaminhamento da pesquisa de usuários ao microsserviço especializado. |
+
+A aplicação usa Java 21 e Spring Boot. Os dados são persistidos em PostgreSQL, e os arquivos são armazenados por uma integração compatível com S3. A API principal mantém a estrutura das tabelas e os scripts de índices do banco compartilhado.
+
+## Integração com microsserviços
+
+A pesquisa de usuários é executada pelo [inxbtwt-search-api](https://github.com/inxbtwt/inxbtwt-search-api). A documentação desse repositório explica como iniciar o serviço, sua conexão com o banco e o funcionamento da consulta.
+
+O fluxo atual da busca é:
+
+```text
+Front-end → API principal → OpenFeign → Microsserviço de busca → PostgreSQL
 ```
 
-Para encerrar as ferramentas:
+O front-end chama a API principal com uma sessão autenticada:
 
-```sh
-docker compose down
+```http
+GET /search?user=luc&page=0&size=20
 ```
 
-## Integração com a search-api
+A API principal valida o termo e a paginação e usa OpenFeign para chamar `GET /api/search` no microsserviço. O endereço de destino é definido por `SEARCH_API_URL`.
 
-O endpoint autenticado `GET /search?user=luc&page=0&size=20` consulta a search-api pelo cliente OpenFeign `SearchApiClient`. O cliente chama `GET /api/search` e converte a resposta do microsserviço para o contrato da API principal, com nome, username e foto em `data.content` e os metadados de paginação. Pela Vercel, use `/api/search`.
+O microsserviço consulta a tabela de usuários no mesmo banco e schema utilizados pela API principal. A pesquisa considera trechos do username, sem diferenciar maiúsculas de minúsculas, e pode aproveitar o índice GIN de trigramas criado com `pg_trgm`.
 
-Na execução pela IDE, a URL padrão é `http://localhost:8083`, conforme a porta configurada na search-api. Para usar outro endereço, configure a variável de ambiente `SEARCH_API_URL`.
+Os resultados são devolvidos pela API principal em `data.content`, com nome, username e URL da foto, acompanhados dos metadados de paginação. O contrato atual pode incluir o próprio usuário autenticado e não retorna UUID nos itens da busca. A consulta do perfil completo por username continua na API principal.
 
-No `compose.local.yaml`, a API usa `http://host.docker.internal:8083` por padrão para acessar a search-api executada no host pelo Docker Desktop. É necessário iniciar a search-api separadamente; para outro servidor ou container, configure `SEARCH_API_URL` no `.env` com um endereço acessível pelo container da API.
+Quando o front é acessado pela Vercel, a chamada é feita para `/api/search`; o proxy encaminha a requisição para `/search` na API principal. A consulta ao banco para produzir os resultados da busca fica no microsserviço.
 
-O cliente usa timeout de conexão de 3 segundos e de resposta de 5 segundos. A implementação local de pesquisa de perfis e o endpoint `GET /profiles` foram removidos da API principal. A busca é executada pela search-api, sem consultar usuários localmente para produzir os resultados. O endpoint exige sessão autenticada e valida termo e paginação antes de chamar o microsserviço. Falhas de conexão retornam 503; respostas incompatíveis retornam 502. O contrato atual não retorna UUID e não exclui o próprio usuário dos resultados. As consultas de perfil em `/profiles/me` e `/profiles/username/{username}` continuam disponíveis.
+## Estado atual
 
-## Testar o front na Vercel
+Usuários, autenticação, perfis, publicações, feed, amizades e notificações continuam implementados nesta API. A busca de usuários já foi delegada ao microsserviço por OpenFeign. O antigo endpoint de pesquisa `GET /profiles` foi removido; as rotas de consulta e atualização de perfil permanecem disponíveis.
 
-O Dockerfile compila a API com Java 21 e Maven Wrapper e gera uma imagem final com JRE 21, executada por um usuário sem privilégios. O Compose usa a imagem `inxbtwt-api:local-test` por padrão e ativa o profile Spring `local`.
-
-O arquivo `compose.local.yaml` sobe a API e o Cloudflare Quick Tunnel junto com PostgreSQL e SeaweedFS. O túnel aponta diretamente para `http://api:8081` na rede Docker. Não é necessário executar Java ou Maven no host.
-
-1. Crie um arquivo `.env` na raiz e configure `APP_SECURITY_CORS_ALLOWED_ORIGINS` para a origem HTTPS exata do front na Vercel. Para permitir também o front de desenvolvimento, separe as origens por vírgula. O arquivo `.env` não é versionado.
-2. Compile a imagem e suba os serviços:
-
-```sh
-docker compose -f compose.local.yaml up -d --build --wait
-```
-
-3. Consulte a URL pública gerada:
-
-```sh
-docker compose -f compose.local.yaml logs -f tunnel
-```
-
-4. Copie a origem `https://….trycloudflare.com` para `BACKEND_TUNNEL_URL`, no GitHub Environment **local** do repositório `w-just`, e execute o deploy do front. Não inclua `/api`. A Vercel encaminha `/api/*` ao túnel e ajusta os cookies de autenticação.
-
-A URL do túnel é temporária e pode mudar quando ele for recriado ou reiniciado. Nesse caso, atualize a variável e refaça o deploy do front.
-
-## Imagem e configuração
-
-O arquivo `.env` aceita `API_IMAGE_TAG` para identificar a versão, por exemplo `local-test-002`. Depois de alterar código ou tag, use o mesmo comando com `--build` para gerar e executar a nova imagem. Ela é criada no Docker local; não é publicada em um registry.
-
-O Compose substitui os endereços de banco e storage pelos nomes dos serviços (`postgres:5432` e `seaweedfs:8333`). As configurações existentes do profile Spring `local`, incluindo as credenciais de desenvolvimento, continuam sendo usadas. O serviço `api-db-init` cria o schema `api_local_test` de forma idempotente; a API de testes usa esse schema para não depender da estrutura antiga de `public`. Os usuários e posts dessa versão começam vazios. Os dados existentes em `public` são preservados, assim como os volumes do banco e do storage entre recriações dos containers.
-
-A API fica acessível no host em `http://localhost:8081`. Encerre uma API iniciada pela IDE antes de subir o container para evitar disputa dessa porta. Para verificar a resposta local, use `GET /auth/csrf`; pela Vercel, a rota correspondente é `/api/auth/csrf`.
-
-```sh
-docker compose -f compose.local.yaml ps
-docker compose -f compose.local.yaml logs --tail 100 api
-```
-
-Para encerrar apenas a exposição pública:
-
-```sh
-docker compose -f compose.local.yaml stop tunnel
-```
-
-Os dois arquivos usam o mesmo projeto Compose e os mesmos volumes. Para alternar do modo Vercel para desenvolvimento, encerre primeiro os containers com `docker compose -f compose.vercel.yaml down` e depois execute `docker compose up -d --wait`. Isso libera a porta 8081 para a IDE e encerra o túnel. Não use `down -v` se quiser preservar os dados.
-
-O Quick Tunnel é destinado a testes. Não há reinício automático configurado para ele, pois um novo processo pode gerar outra URL pública.
-
-Referências: [Cloudflare Quick Tunnels](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/) e [Docker multi-stage builds](https://docs.docker.com/get-started/docker-concepts/building-images/multi-stage-builds/).
+A separação dos serviços está sendo feita gradualmente. Atualmente, a pesquisa considera apenas username; busca por nome, posts e similaridade para erros de digitação ainda não faz parte do fluxo implementado.
