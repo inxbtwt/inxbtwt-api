@@ -50,6 +50,110 @@ app:
         method: GET
         access: AUTHENTICATED
 
+      - path: /search
+        method: GET
+        access: AUTHENTICATED
+
       - path: /profiles/me
         method: PATCH
+        access: AUTHENTICATED
+
+      - path: /profiles/username/*
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /posts/*
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /feed
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts/*/like
+        method: PUT
+        access: AUTHENTICATED
+
+      - path: /posts/*/like
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /posts/*/repost
+        method: PUT
+        access: AUTHENTICATED
+
+      - path: /posts/*/repost
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /posts/*/comments
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /posts/*/comments
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts/*/media/*
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /posts/*
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /posts/*
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /notifications
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /notifications/unread-count
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /notifications/*/read
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /notifications/read-all
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /friendships
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /friendships/**
+        method: GET
+        access: AUTHENTICATED
+
+      - path: /friendships/*/request
+        method: POST
+        access: AUTHENTICATED
+
+      - path: /friendships/*/accept
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /friendships/*/decline
+        method: PATCH
+        access: AUTHENTICATED
+
+      - path: /friendships/*/cancel
+        method: DELETE
+        access: AUTHENTICATED
+
+      - path: /friendships/*
+        method: DELETE
         access: AUTHENTICATED

@@ -30,14 +30,18 @@ public class AuthJWTServiceImpl implements AuthService {
     @Override
     @Transactional
     public JwtGenerateResponse authenticate(LoginRequest request) {
-        var user = users.findByEmailIgnoreCase(request.email())
-                .orElseThrow(() -> new BadCredentialsException("E-mail ou senha inválidos."));
+        String identifier = request.identifier().trim();
+        var user = users.findByEmailIgnoreCase(identifier)
+                .or(() -> users.findByUsernameIgnoreCase(identifier))
+                .orElseThrow(() -> new BadCredentialsException("E-mail, username ou senha inválidos."));
         var stored = user.getPassword();
         boolean legacy = !stored.startsWith("{");
         boolean matches = legacy
                 ? MessageDigest.isEqual(stored.getBytes(StandardCharsets.UTF_8), request.password().getBytes(StandardCharsets.UTF_8))
                 : passwordEncoder.matches(request.password(), stored);
-        if (!matches) throw new BadCredentialsException("E-mail ou senha inválidos.");
+        if (!matches) {
+            throw new BadCredentialsException("E-mail, username ou senha inválidos.");
+        }
         if (legacy || passwordEncoder.upgradeEncoding(stored)) {
             users.save(user.toBuilder().password(passwordEncoder.encode(request.password())).build());
         }

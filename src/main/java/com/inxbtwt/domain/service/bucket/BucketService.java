@@ -7,6 +7,8 @@ import com.inxbtwt.domain.dto.bucket.UploadFileResponse;
 public interface BucketService {
     UploadFileResponse upload(UploadFileRequest request);
 
+    void delete(String key);
+
     /** Busca pela chave ou pela URL completa do bucket configurado. */
     DownloadFileResponse download(String keyOrUrl);
 }
