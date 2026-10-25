@@ -20,6 +20,7 @@ services:
         APP_VERSION: '${API_IMAGE_TAG:-local-test}'
     environment:
       SPRING_PROFILES_ACTIVE: local
+      SEARCH_API_URL: '${SEARCH_API_URL:-http://host.docker.internal:8083}'
       SPRING_DOCKER_COMPOSE_ENABLED: 'false'
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rsdb?currentSchema=api_local_test
       APP_STORAGE_S3_ENDPOINT: http://seaweedfs:8333

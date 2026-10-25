@@ -6,16 +6,12 @@ import com.inxbtwt.db.repository.FriendshipRepository;
 import com.inxbtwt.db.repository.UserDataRepository;
 import com.inxbtwt.domain.dto.profile.http.PatchProfileRequest;
 import com.inxbtwt.domain.dto.profile.http.ProfileResponse;
-import com.inxbtwt.domain.dto.profile.http.ProfileSummaryResponse;
 import com.inxbtwt.domain.dto.profile.http.ProfileViewResponse;
 import com.inxbtwt.domain.service.user.find.FindUserUseCase;
-import com.inxbtwt.domain.service.profile.search.SearchProfilesUseCase;
 import com.inxbtwt.domain.util.UserAuthUtil;
 import com.inxbtwt.domain.util.UserUtils;
 import com.inxbtwt.infra.exception.domain.user.UserInvalidException;
 import com.inxbtwt.infra.exception.domain.user.UserNotFoundException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +27,6 @@ public class ProfileServiceImpl implements ProfileService {
     private final FindUserUseCase findUserUseCase;
     private final UserAuthUtil userAuthUtil;
     private final Validator validator;
-    private final SearchProfilesUseCase searchProfilesUseCase;
 
     @Override
     @Transactional(readOnly = true)
@@ -40,11 +35,6 @@ public class ProfileServiceImpl implements ProfileService {
         return profileRepository.findByUserId(userId)
                 .map(this::toResponse)
                 .orElseGet(() -> new ProfileResponse(null, userId, null, null, friendships.countFriends(userId)));
-    }
-
-    @Override
-    public Page<ProfileSummaryResponse> searchProfiles(String query, Pageable pageable) {
-        return searchProfilesUseCase.searchProfiles(query, pageable);
     }
 
     @Override

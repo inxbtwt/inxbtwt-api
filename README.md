@@ -14,6 +14,16 @@ Para encerrar as ferramentas:
 docker compose down
 ```
 
+## Integração com a search-api
+
+O endpoint autenticado `GET /search?user=luc&page=0&size=20` consulta a search-api pelo cliente OpenFeign `SearchApiClient`. O cliente chama `GET /api/search` e converte a resposta do microsserviço para o contrato da API principal, com nome, username e foto em `data.content` e os metadados de paginação. Pela Vercel, use `/api/search`.
+
+Na execução pela IDE, a URL padrão é `http://localhost:8083`, conforme a porta configurada na search-api. Para usar outro endereço, configure a variável de ambiente `SEARCH_API_URL`.
+
+No `compose.local.yaml`, a API usa `http://host.docker.internal:8083` por padrão para acessar a search-api executada no host pelo Docker Desktop. É necessário iniciar a search-api separadamente; para outro servidor ou container, configure `SEARCH_API_URL` no `.env` com um endereço acessível pelo container da API.
+
+O cliente usa timeout de conexão de 3 segundos e de resposta de 5 segundos. A implementação local de pesquisa de perfis e o endpoint `GET /profiles` foram removidos da API principal. A busca é executada pela search-api, sem consultar usuários localmente para produzir os resultados. O endpoint exige sessão autenticada e valida termo e paginação antes de chamar o microsserviço. Falhas de conexão retornam 503; respostas incompatíveis retornam 502. O contrato atual não retorna UUID e não exclui o próprio usuário dos resultados. As consultas de perfil em `/profiles/me` e `/profiles/username/{username}` continuam disponíveis.
+
 ## Testar o front na Vercel
 
 O Dockerfile compila a API com Java 21 e Maven Wrapper e gera uma imagem final com JRE 21, executada por um usuário sem privilégios. O Compose usa a imagem `inxbtwt-api:local-test` por padrão e ativa o profile Spring `local`.

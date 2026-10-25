@@ -5,6 +5,9 @@ management:
         enabled: false
 
 app:
+  search-api:
+    url: ${SEARCH_API_URL:http://localhost:8083}
+
   security:
     cors:
       allowed-origins:
@@ -53,5 +56,6 @@ spring:
       mode: always
       schema-locations:
         - classpath:db/username-index.sql
+        - classpath:db/index-ngram-search-user.sql
         - classpath:db/post-media-schema.sql
         - classpath:db/notification-types-schema.sql

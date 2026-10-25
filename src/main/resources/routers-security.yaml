@@ -50,12 +50,12 @@ app:
         method: GET
         access: AUTHENTICATED
 
-      - path: /profiles/me
-        method: PATCH
+      - path: /search
+        method: GET
         access: AUTHENTICATED
 
-      - path: /profiles
-        method: GET
+      - path: /profiles/me
+        method: PATCH
         access: AUTHENTICATED
 
       - path: /profiles/username/*
