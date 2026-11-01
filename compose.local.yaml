@@ -12,6 +12,27 @@ services:
         condition: service_healthy
     labels:
       org.springframework.boot.ignore: 'true'
+  auth-api:
+    image: 'inxbtwt-auth-api:${API_IMAGE_TAG:-local-test}'
+    build:
+      context: '${AUTH_API_BUILD_CONTEXT:-../inxbtwt-auth-api}'
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    volumes:
+      - auth-api-keys:/data/keys
+    ports:
+      - '127.0.0.1:8084:8084'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'bash -c "echo > /dev/tcp/127.0.0.1/8084"']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 40s
+    labels:
+      org.springframework.boot.ignore: 'true'
   api:
     image: 'inxbtwt-api:${API_IMAGE_TAG:-local-test}'
     build:
@@ -31,6 +52,8 @@ services:
       api-db-init:
         condition: service_completed_successfully
       postgres:
+        condition: service_healthy
+      auth-api:
         condition: service_healthy
       seaweedfs:
         condition: service_healthy
@@ -57,7 +80,7 @@ services:
     build:
       context: '${SEARCH_API_BUILD_CONTEXT:-../inxbtwt-search-api}'
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: docker
       SERVER_PORT: '8083'
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rsdb?currentSchema=api_local_test
     ports:
@@ -109,5 +132,6 @@ services:
       start_period: 10s
 
 volumes:
+  auth-api-keys:
   seaweedfs-data:
   postgres-data:

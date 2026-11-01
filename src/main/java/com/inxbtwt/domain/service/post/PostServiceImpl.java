@@ -12,6 +12,7 @@ import com.inxbtwt.domain.util.UserAuthUtil;
 import com.inxbtwt.infra.exception.domain.DomainException;
 import com.inxbtwt.infra.exception.domain.post.PostNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import com.inxbtwt.domain.enums.PostProfileTab;
 import com.inxbtwt.db.repository.PostRepostRepository;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
@@ -68,6 +70,8 @@ public class PostServiceImpl implements PostService {
         if (tenorId != null) {
             postMedia.attachTenor(post, tenorId);
         }
+        log.info("Publicação {} criada pelo usuário {} ({} anexo(s), GIF: {})",
+                post.getPostId(), userId, attachments.size(), tenorId != null);
         return postMapper.toResponse(post);
     }
 
@@ -96,6 +100,7 @@ public class PostServiceImpl implements PostService {
         post.remove();
         postRepository.saveAndFlush(post);
         postMedia.removeAttachments(post);
+        log.info("Publicação {} excluída", postId);
         var parent = post.getParent();
         return new PostDeletedResponse(postId,
                 parent == null || parent.getDeletedAt() != null ? null : postMapper.toResponse(parent));

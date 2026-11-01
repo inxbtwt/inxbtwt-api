@@ -18,6 +18,7 @@ import com.inxbtwt.infra.exception.domain.DomainException;
 import com.inxbtwt.infra.exception.http.ConflictHttpException;
 import com.inxbtwt.infra.exception.http.ForbiddenHttpException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ import java.util.UUID;
  * Recusar, cancelar ou desfazer retorna a relação para NONE, permitindo um novo pedido.
  * Esta camada não participa da seleção ou ordenação do feed.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class FriendshipServiceImpl implements FriendshipService {
@@ -97,6 +99,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         if (pair.getStatus() == FriendshipStatus.NONE) {
             pair.request(viewer);
             friendships.saveAndFlush(pair);
+            log.info("Usuário {} enviou solicitação de amizade ao usuário {}", viewer.getUserId(), userId);
             notify(other, viewer, NotificationType.FRIEND_REQUEST_RECEIVED,
                     "Solicitação de amizade", "enviou uma solicitação de amizade.");
         }
@@ -116,6 +119,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         requireRecipient(pair, viewer);
         pair.accept();
         friendships.saveAndFlush(pair);
+        log.info("Usuário {} aceitou a solicitação de amizade do usuário {}", viewer.getUserId(), userId);
         notify(other, viewer, NotificationType.FRIEND_REQUEST_ACCEPTED,
                 "Solicitação de amizade aceita", "aceitou sua solicitação de amizade.");
         return response(other, pair, viewer.getUserId());
@@ -160,6 +164,7 @@ public class FriendshipServiceImpl implements FriendshipService {
         }
         pair.clear();
         friendships.saveAndFlush(pair);
+        log.info("Usuário {} executou {} com o usuário {}", viewer.getUserId(), action, userId);
         return response(other, pair, viewer.getUserId());
     }
 

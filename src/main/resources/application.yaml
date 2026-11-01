@@ -16,11 +16,34 @@ spring:
           search-api:
             connectTimeout: 3000
             readTimeout: 5000
+  security:
+    oauth2:
+      client:
+        registration:
+          search-api:
+            provider: auth-api
+            client-id: inxbtwt-api
+            client-secret: local-search-service-secret
+            client-authentication-method: client_secret_basic
+            authorization-grant-type: client_credentials
+            scope: search:read
+        provider:
+          auth-api:
+            token-uri: http://localhost:8084/api/v1/oauth2/token
 server:
   port: 8081
 
 app:
   search-api:
     url: ${SEARCH_API_URL:http://localhost:8083}
+  auth-api:
+    url: http://localhost:8084/api/v1
+  security:
+    jwt:
+      issuer: http://localhost:8084/api/v1
+      jwks-uri: http://localhost:8084/api/v1/oauth2/jwks
+      audience: inxbtwt-api
+      access-token-expiration: 15m
+      refresh-token-expiration: 7d
   feed:
     default-strategy: chronological

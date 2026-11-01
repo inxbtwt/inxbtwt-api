@@ -10,8 +10,9 @@ import java.time.Duration;
 @Validated
 @ConfigurationProperties(prefix = "app.security.jwt")
 public record JwtProperties(
-        @NotBlank String secret,
         @NotBlank String issuer,
+        @NotBlank String jwksUri,
+        @NotBlank String audience,
         @NotNull Duration accessTokenExpiration,
         @NotNull Duration refreshTokenExpiration
 ) {

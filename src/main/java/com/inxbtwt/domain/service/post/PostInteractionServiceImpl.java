@@ -15,12 +15,14 @@ import com.inxbtwt.domain.util.UserAuthUtil;
 import com.inxbtwt.infra.exception.domain.DomainException;
 import com.inxbtwt.infra.exception.domain.post.PostNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostInteractionServiceImpl implements PostInteractionService {
@@ -38,6 +40,7 @@ public class PostInteractionServiceImpl implements PostInteractionService {
     public PostResponse setLike(UUID postId, boolean liked) {
         var user = findUser.findUser(auth.getUserId());
         var post = findPost(postId);
+        log.info("Usuário {} {} a publicação {}", user.getUserId(), liked ? "curtiu" : "removeu a curtida da", postId);
         if (liked) {
             if (likes.add(post.getId(), user.getId()) > 0) {
                 notifyInteraction(post, user, NotificationType.POST_LIKED);
@@ -74,6 +77,7 @@ public class PostInteractionServiceImpl implements PostInteractionService {
         var comment = PostEntity.builder().author(user).parent(parent)
                 .content(request.content().strip()).build();
         posts.saveAndFlush(comment);
+        log.info("Usuário {} comentou na publicação {}", user.getUserId(), postId);
         notifyInteraction(parent, user, NotificationType.POST_COMMENTED);
         return new CommentCreatedResponse(mapper.toResponse(comment), mapper.toResponse(parent));
     }

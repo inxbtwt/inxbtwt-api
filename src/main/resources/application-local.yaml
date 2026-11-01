@@ -5,6 +5,8 @@ management:
         enabled: false
 
 app:
+  auth-api:
+    url: http://auth-api:8084/api/v1
   security:
     cors:
       allowed-origins:
@@ -13,8 +15,9 @@ app:
         - http://localhost:4200
         - http://127.0.0.1:4200
     jwt:
-      secret: aW54YnR3dC1kZXYtb25seS1qd3Qtc2VjcmV0LTMya2V5IQ==
-      issuer: inxbtwt-api
+      issuer: http://auth-api:8084/api/v1
+      jwks-uri: http://auth-api:8084/api/v1/oauth2/jwks
+      audience: inxbtwt-api
       access-token-expiration: 15m
       refresh-token-expiration: 7d
   storage:
