@@ -56,12 +56,14 @@ public class AuthController {
             @CookieValue(name = AuthCookies.REFRESH_TOKEN, required = false) String refreshToken,
             HttpServletRequest request,
             HttpServletResponse response) {
-        authService.logout(refreshToken);
-
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        new CsrfLogoutHandler(csrfTokenRepository).logout(request, response, authentication);
-        new SecurityContextLogoutHandler().logout(request, response, authentication);
-        cookies.clear(response);
+        try {
+            authService.logout(refreshToken);
+        } finally {
+            var authentication = SecurityContextHolder.getContext().getAuthentication();
+            new CsrfLogoutHandler(csrfTokenRepository).logout(request, response, authentication);
+            new SecurityContextLogoutHandler().logout(request, response, authentication);
+            cookies.clear(response);
+        }
 
         return ApiControllerUtils.ok("Logout realizado com sucesso.", null);
     }

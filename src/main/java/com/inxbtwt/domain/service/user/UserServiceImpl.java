@@ -99,7 +99,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse createUser(CreateUserRequest createUserRequest) throws UserException {
-        log.info("m=createUser");
+        log.info("Cadastro de usuário iniciado");
         UserUtils.validateFields(createUserRequest, validator);
         UserUtils.validateEmailAvailability(userRepository.existsByEmailIgnoreCase(createUserRequest.email()));
         UserUtils.validateUsernameAvailability(userRepository.existsByUsernameIgnoreCase(createUserRequest.username()));
@@ -108,6 +108,7 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(createUserRequest.password())).build();
         userMapper.linkAddresses(user);
         var savedUser = userRepository.saveAndFlush(user);
+        log.info("Usuário {} cadastrado com sucesso", savedUser.getUserId());
         return userMapper.toResponse(savedUser);
     }
 

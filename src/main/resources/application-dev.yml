@@ -7,6 +7,8 @@ management:
 app:
   search-api:
     url: ${SEARCH_API_URL:http://localhost:8083}
+  auth-api:
+    url: http://localhost:8084/api/v1
 
   security:
     cors:
@@ -16,8 +18,9 @@ app:
         - http://localhost:4200
         - http://127.0.0.1:4200
     jwt:
-      secret: aW54YnR3dC1kZXYtb25seS1qd3Qtc2VjcmV0LTMya2V5IQ==
-      issuer: inxbtwt-api
+      issuer: http://localhost:8084/api/v1
+      jwks-uri: http://localhost:8084/api/v1/oauth2/jwks
+      audience: inxbtwt-api
       access-token-expiration: 15m
       refresh-token-expiration: 7d
   storage:
@@ -43,7 +46,7 @@ spring:
   jpa:
     defer-datasource-initialization: true
     open-in-view: false
-    show-sql: true
+    show-sql: false
     hibernate:
       ddl-auto: update
     properties:

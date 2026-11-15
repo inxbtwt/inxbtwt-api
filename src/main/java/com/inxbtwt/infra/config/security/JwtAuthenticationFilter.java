@@ -2,7 +2,7 @@ package com.inxbtwt.infra.config.security;
 
 import com.inxbtwt.domain.util.JwtUtils;
 import com.inxbtwt.db.repository.UserDataRepository;
-import io.jsonwebtoken.JwtException;
+import org.springframework.security.oauth2.jwt.JwtException;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import org.springframework.http.HttpStatus;
@@ -44,12 +44,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 var claims = jwt.decode(token);
-                if (!"access".equals(claims.get("token_type", String.class))) throw new JwtException("Access token obrigatório.");
+                if (!"access".equals(claims.getClaimAsString("token_type"))) {
+                    throw new JwtException("Access token obrigatório.");
+                }
                 var userId = UUID.fromString(claims.getSubject());
+                var roles = claims.getClaimAsStringList("roles");
+                if (roles == null || roles.isEmpty()) {
+                    throw new JwtException("O token não possui permissões.");
+                }
 
                 if (users.findByUserId(userId).isEmpty()) throw new JwtException("Usuário inexistente.");
 
-                var authentication = new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                var authorities = roles.stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .toList();
+                var authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
                 var context = SecurityContextHolder.createEmptyContext();
                 context.setAuthentication(authentication);
                 SecurityContextHolder.setContext(context);

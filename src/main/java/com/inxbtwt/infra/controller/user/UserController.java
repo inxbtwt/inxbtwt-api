@@ -1,6 +1,7 @@
 package com.inxbtwt.infra.controller.user;
 
 import com.inxbtwt.domain.dto.api.ApiResponse;
+import com.inxbtwt.domain.dto.api.PageResponse;
 import com.inxbtwt.domain.dto.bucket.UploadFileResponse;
 import com.inxbtwt.domain.dto.user.http.UserPhotoUrlsResponse;
 import com.inxbtwt.domain.enums.UserPhotoType;
@@ -15,7 +16,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import jakarta.validation.constraints.Min;
@@ -74,12 +74,12 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<UserResponse>>> getUsers(
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getUsers(
             @RequestParam(defaultValue = "0") @Min(value = 0, message = "A página não pode ser negativa.") int page,
             @RequestParam(defaultValue = "20") @Min(value = 1, message = "O tamanho da página deve ser pelo menos 1.")
             @Max(value = 100, message = "O tamanho da página deve ser no máximo 100.") int size) {
         return ApiControllerUtils.ok(HttpMessages.USERS_FOUND,
-                userService.getUsers(PageRequest.of(page, size, Sort.by("id").ascending())));
+                PageResponse.from(userService.getUsers(PageRequest.of(page, size, Sort.by("id").ascending()))));
     }
 
     @PutMapping("/{userId}")
