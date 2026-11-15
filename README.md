@@ -14,7 +14,7 @@ Ser a API principal da rede social inxbtwt, responsável pelas regras de negóci
 | Arquivos | Upload e consulta de fotos de perfil e capa, com armazenamento compatível com S3. |
 | Publicações | Criação, edição e exclusão de posts, anexos de imagem ou GIF e incorporação de conteúdo do Tenor. |
 | Interações | Comentários, curtidas e reposts. |
-| Feed | Listagem paginada de publicações com estratégia cronológica. |
+| Feed | Autentica a sessão e delega a seleção e montagem da página ao `inxbtwt-feed-api`. |
 | Amizades | Envio, aceite, recusa e cancelamento de solicitações, consulta de relações, listagem de amigos e encerramento de amizades. |
 | Notificações | Consulta de notificações, contagem de não lidas e marcação de leitura. |
 | Busca | Validação da requisição e encaminhamento da pesquisa de usuários ao microsserviço especializado. |
@@ -49,6 +49,16 @@ Quando o front é acessado pela Vercel, a chamada é feita para `/api/search`; o
 
 ## Estado atual
 
-Usuários, perfis, publicações, feed, amizades e notificações continuam implementados nesta API. A autenticação de usuários foi transferida ao auth-api; esta API mantém os endpoints compatíveis com o front-end e as regras de acesso às rotas. A busca é delegada ao microsserviço por OpenFeign. O antigo endpoint de pesquisa `GET /profiles` foi removido; as rotas de consulta e atualização de perfil permanecem disponíveis.
+Usuários, perfis, publicações, amizades e notificações continuam implementados nesta API. A autenticação de usuários foi transferida ao auth-api; esta API mantém os endpoints compatíveis com o front-end e as regras de acesso às rotas. Busca e montagem do feed são delegadas aos respectivos microsserviços por OpenFeign. O antigo endpoint de pesquisa `GET /profiles` foi removido; as rotas de consulta e atualização de perfil permanecem disponíveis.
+
+## Feed no microsserviço
+
+O contrato público continua `GET /feed?strategy=chronological&page=0&size=20`, com a sessão autenticada. A API principal obtém o UUID do usuário da sessão e um token Client Credentials com escopo `feed:read`, então chama `GET /api/feed` no `inxbtwt-feed-api`. O JWT de usuário não é repassado. O microsserviço valida assinatura, issuer, audiência `inxbtwt-feed-api` e escopo e executa toda a montagem no banco compartilhado.
+
+`FEED_API_URL` define o destino: `http://localhost:8085` por padrão na IDE e `http://feed-api:8085` no Compose completo. Se o feed roda na IDE e a API em Docker, use `http://host.docker.internal:8085`. O `compose.local.yaml` inclui o serviço de feed, iniciado após esta API criar as tabelas. O auth precisa incluir a configuração do escopo e da audiência de feed.
+
+O feed continua global e cronológico, com os mesmos posts, autores, interações, mídias e metadados de paginação. A estratégia, as consultas e o enriquecimento de dados passaram para o microsserviço. O `PostMapper` desta API permanece necessário para os demais endpoints de publicações e perfis. Upload e download continuam nesta API; as URLs de mídia não mudaram.
+
+Falhas de conexão, timeout ou indisponibilidade do feed retornam 503; resposta incompatível ou falha interna do microsserviço retorna 502. Parâmetros inválidos retornam 400. Não há montagem local como fallback.
 
 A separação dos serviços está sendo feita gradualmente. Atualmente, a pesquisa considera apenas username; busca por nome, posts e similaridade para erros de digitação ainda não faz parte do fluxo implementado.
