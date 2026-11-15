@@ -14,28 +14,31 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class ServiceAccessTokenProvider {
 
-    private static final String CLIENT_REGISTRATION_ID = "search-api";
     private static final String PRINCIPAL_NAME = "inxbtwt-api";
 
     private final OAuth2AuthorizedClientManager authorizedClientManager;
 
     public String accessToken() {
-        var request = OAuth2AuthorizeRequest.withClientRegistrationId(CLIENT_REGISTRATION_ID)
+        return accessToken("search-api");
+    }
+
+    public String accessToken(String registrationId) {
+        var request = OAuth2AuthorizeRequest.withClientRegistrationId(registrationId)
                 .principal(PRINCIPAL_NAME)
                 .build();
         try {
             var authorizedClient = authorizedClientManager.authorize(request);
             if (authorizedClient == null || authorizedClient.getAccessToken() == null) {
-                log.error("Auth-api não devolveu credencial de serviço para a search-api");
+                log.error("Auth-api não devolveu credencial de serviço para {}", registrationId);
                 throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                        "Não foi possível obter credencial para a API de busca.");
+                        "Não foi possível obter credencial de serviço.");
             }
 
             return authorizedClient.getAccessToken().getTokenValue();
         } catch (OAuth2AuthorizationException exception) {
             log.error("Falha ao obter credencial de serviço no auth-api: {}", exception.getError().getErrorCode());
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
-                    "Não foi possível obter credencial para a API de busca.", exception);
+                    "Não foi possível obter credencial de serviço.", exception);
         }
     }
 }

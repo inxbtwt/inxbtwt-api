@@ -42,6 +42,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: local
       SEARCH_API_URL: http://search-api:8083
+      FEED_API_URL: http://feed-api:8085
+      LOG_DIR: /tmp/inxbtwt-logs
+      SPRING_APPLICATION_JSON: '{"spring":{"security":{"oauth2":{"client":{"provider":{"auth-api":{"token-uri":"http://auth-api:8084/api/v1/oauth2/token"}}}}}}}'
       SPRING_DOCKER_COMPOSE_ENABLED: 'false'
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rsdb?currentSchema=api_local_test
       APP_STORAGE_S3_ENDPOINT: http://seaweedfs:8333
@@ -90,6 +93,25 @@ services:
         condition: service_healthy
     healthcheck:
       test: ['CMD-SHELL', 'bash -c "echo > /dev/tcp/127.0.0.1/8083"']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 40s
+    labels:
+      org.springframework.boot.ignore: 'true'
+  feed-api:
+    image: 'inxbtwt-feed-api:${API_IMAGE_TAG:-local-test}'
+    build:
+      context: '${FEED_API_BUILD_CONTEXT:-../inxbtwt-feed-api}'
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - '127.0.0.1:8085:8085'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'bash -c "echo > /dev/tcp/127.0.0.1/8085"']
       interval: 5s
       timeout: 3s
       retries: 30

@@ -18,9 +18,6 @@ import java.util.UUID;
 public interface PostRepository extends JpaRepository<PostEntity, Long> {
 
     @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
-    Slice<PostEntity> findByParentIsNullAndDeletedAtIsNullOrderByCreatedAtDescIdDesc(Pageable pageable);
-
-    @EntityGraph(attributePaths = {"author", "parent", "parent.author"})
     @Query("select p from PostEntity p left join PostRepostEntity r on r.post = p and r.user.userId = :authorId "
             + "where p.deletedAt is null and ((p.author.userId = :authorId and p.parent is null) or r.id is not null) "
             + "order by coalesce(r.createdAt, p.createdAt) desc, p.id desc")
